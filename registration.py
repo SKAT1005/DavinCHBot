@@ -9,9 +9,18 @@ from const import bot, simbols
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'DavinCHBot.settings')
 django.setup()
+
+# Import module
+from geopy.geocoders import Nominatim
 from users.models import User
 
-
+def get_city(message):
+    geolocator = Nominatim(user_agent="my_geocoder")
+    Latitude = str(message.location.latitude)
+    Longitude = str(message.location.longitude)
+    location = geolocator.geocode(Latitude + "," + Longitude)
+    city = location.raw['display_name'].split(', ')[-7].lower()
+    return city
 def enter_check_photo(message, chat_id, user, simbol):
     if message.content_type != 'photo':
         msg = bot.send_message(chat_id=chat_id, text='Отправьте фотографию')
@@ -22,13 +31,7 @@ def enter_check_photo(message, chat_id, user, simbol):
         text = f'{user.name}, {user.age}, {user.category}\n' \
                f'{user.description}\n\n' \
                f'Жест для проверки: {simbol}'
-        file_info = bot.get_file(avatar_id)
         bot.send_photo(chat_id=admin.chat_id, photo=avatar_id, caption=text, reply_markup=buttons.check(user.chat_id))
-        # downloaded_file = bot.download_file(file_info.file_path)
-        # with open('photo.jpg', 'wb') as new_file:
-        #     new_file.write(downloaded_file)
-        # user.check_photo = File(open('photo.jpg', 'rb'))
-        # user.save()
 
 
 def send_check_photo(chat_id, user):
@@ -41,7 +44,7 @@ def send_check_photo(chat_id, user):
     bot.register_next_step_handler(msg, enter_check_photo, chat_id, user, simbol)
 
 
-def create_account(chat_id, name, age, gender, category, description, find_age, find_gender, avatar_id):
+def create_account(chat_id, name, age, gender, category, description, find_age, find_gender, avatar_id, city):
     file_info = bot.get_file(avatar_id)
     downloaded_file = bot.download_file(file_info.file_path)
     with open('photo.jpg', 'wb') as new_file:
@@ -51,6 +54,7 @@ def create_account(chat_id, name, age, gender, category, description, find_age, 
         name=name,
         age=age,
         avatar=File(open('photo.jpg', 'rb')),
+        city=city,
         gender=gender,
         category=category,
         description=description,
@@ -58,8 +62,22 @@ def create_account(chat_id, name, age, gender, category, description, find_age, 
         find_gender=find_gender
     )
     send_check_photo(chat_id=chat_id, user=user)
+    bot.send_message(chat_id=chat_id, text='Ваш аккаунт отправлен на проверку, ожидайте ее результатов')
 
 
+def enter_city(message, chat_id, name, age, gender, category, description, find_age, find_gender, avatar_id):
+    if message.content_type == 'text':
+        city = message.text.lower()
+        create_account(chat_id, name, age, gender, category, description, find_age, find_gender, avatar_id, city)
+    elif message.content_type == 'location':
+        city = get_city(message)
+        create_account(chat_id, name, age, gender, category, description, find_age, find_gender, avatar_id, city)
+    else:
+        msg = bot.send_message(chat_id=chat_id,
+                               text='Введите название вашего города или отправьте координаты, нажав кнопку под клавиатурой',
+                               reply_markup=buttons.send_locaton())
+        bot.register_next_step_handler(msg, enter_city, chat_id, name, age, gender, category, description, find_age,
+                                       find_gender, avatar_id)
 def enter_photo(message, chat_id, name, age, gender, category, description, find_age, find_gender):
     if message.content_type != 'photo':
         msg = bot.send_message(chat_id=chat_id, text='Отправьте фотографию')
@@ -67,7 +85,8 @@ def enter_photo(message, chat_id, name, age, gender, category, description, find
                                        find_gender)
     else:
         avatar_id = message.photo[-1].file_id
-        create_account(chat_id, name, age, gender, category, description, find_age, find_gender, avatar_id)
+        msg = bot.send_message(chat_id=chat_id, text='Введите название вашего города или отправьте координаты, нажав кнопку под клавиатурой', reply_markup=buttons.send_locaton())
+        bot.register_next_step_handler(msg, enter_city, chat_id, name, age, gender, category, description, find_age, find_gender, avatar_id)
 
 
 def enter_find_gender(message, chat_id, name, age, gender, category, description, find_age):
@@ -114,7 +133,7 @@ def enter_description(message, chat_id, name, age, gender, category):
     else:
         description = message.text
         if description == 'Пропустить':
-            description = ''
+            description = '🫢🤫'
         msg = bot.send_message(chat_id=chat_id, text='Выбери, какой возраст ты ищешь', reply_markup=buttons.find_age())
         bot.register_next_step_handler(msg, enter_find_age, chat_id, name, age, gender, category, description)
 
@@ -126,8 +145,7 @@ def enter_category(message, chat_id, name, age, gender):
         bot.register_next_step_handler(msg, enter_category, chat_id, name, age, gender)
     else:
         category = message.text
-        if category not in ['свидание', 'дружба', 'общение', 'серьезные отношения', 'пока не определился',
-                            'онлайн общение']:
+        if category not in ['Серьёзные отношения💞', 'Свободные отношения❤️‍🔥', 'Дружба🫡', 'Не определился🫠']:
             msg = bot.send_message(chat_id=chat_id, text='Выбери категорию из клавиатуры внизу экрана',
                                    reply_markup=buttons.category())
             bot.register_next_step_handler(msg, enter_category, chat_id, name, age, gender)

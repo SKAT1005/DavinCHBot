@@ -1,7 +1,7 @@
 {
-  'content_type': 'photo',
-  'id': 7332,
-  'message_id': 7332,
+  'content_type': 'location',
+  'id': 7519,
+  'message_id': 7519,
   'from_user': {
     'id': 1288389919,
     'is_bot': False,
@@ -17,7 +17,7 @@
     'can_connect_to_business': None,
     'has_main_web_app': None
   },
-  'date': 1726003443,
+  'date': 1726421743,
   'chat': {
     'id': 1288389919,
     'type': 'private',
@@ -77,27 +77,21 @@
   'caption_entities': None,
   'audio': None,
   'document': None,
-  'photo': [
-    <telebot.types.PhotoSize
-    object
-    at
-    0x00000206071A2510>,
-    <telebot.types.PhotoSize
-    object
-    at
-    0x000002060744BFD0>,
-    <telebot.types.PhotoSize
-    object
-    at
-    0x000002060744B5D0>
-  ],
+  'photo': None,
   'sticker': None,
   'video': None,
   'video_note': None,
   'voice': None,
   'caption': None,
   'contact': None,
-  'location': None,
+  'location': {
+    'longitude': 30.43087,
+    'latitude': 60.05417,
+    'horizontal_accuracy': None,
+    'live_period': None,
+    'heading': None,
+    'proximity_alert_radius': None
+  },
   'venue': None,
   'animation': None,
   'dice': None,
@@ -156,7 +150,7 @@
   'web_app_data': None,
   'message_auto_delete_timer_changed': None,
   'json': {
-    'message_id': 7332,
+    'message_id': 7519,
     'from': {
       'id': 1288389919,
       'is_bot': False,
@@ -170,29 +164,10 @@
       'username': 'Skat100500',
       'type': 'private'
     },
-    'date': 1726003443,
-    'photo': [
-      {
-        'file_id': 'AgACAgIAAxkBAAIcnWbgsPlqZUy6ir56Z938b1lertiuAAJF4jEbRpgIS0Cxn90WNaWQAQADAgADcwADNgQ',
-        'file_unique_id': 'AQADReIxG0aYCEt4',
-        'file_size': 1847,
-        'width': 70,
-        'height': 90
-      },
-      {
-        'file_id': 'AgACAgIAAxkBAAIcnWbgsPlqZUy6ir56Z938b1lertiuAAJF4jEbRpgIS0Cxn90WNaWQAQADAgADbQADNgQ',
-        'file_unique_id': 'AQADReIxG0aYCEty',
-        'file_size': 25097,
-        'width': 248,
-        'height': 320
-      },
-      {
-        'file_id': 'AgACAgIAAxkBAAIcnWbgsPlqZUy6ir56Z938b1lertiuAAJF4jEbRpgIS0Cxn90WNaWQAQADAgADeAADNgQ',
-        'file_unique_id': 'AQADReIxG0aYCEt9',
-        'file_size': 39717,
-        'width': 355,
-        'height': 458
-      }
-    ]
+    'date': 1726421743,
+    'location': {
+      'latitude': 60.05417,
+      'longitude': 30.43087
+    }
   }
 }

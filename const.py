@@ -1,5 +1,5 @@
 from telebot import TeleBot
 
-bot = TeleBot('7195501588:AAEVSKvVeH9JNg9FXiZ8iph1ryAdeSWX4p8')
+bot = TeleBot('7071542790:AAGLBF9X6V-PDSqcJAPXkfaHBvFR8haowu0')
 
 simbols = '🤙👌🤘🤟✌️🫰'

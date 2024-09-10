@@ -10,13 +10,13 @@ def get_city_by_coord(latitude, longitude):
     print(result)
     if result:
         try:
-            if result['settlement']:
-                return result['settlement'], float(result['geo_lat']), float(result['geo_lon'])
+            if result['data']['settlement']:
+                return result['data']['settlement'], float(result['data']['geo_lat']), float(result['data']['geo_lon'])
         except Exception:
             pass
         try:
-            if result['city']:
-                return result['city'], float(result['geo_lat']), float(result['geo_lon'])
+            if result['data']['city']:
+                return result['data']['city'], float(result['data']['geo_lat']), float(result['data']['geo_lon'])
         except Exception:
             pass
     return False, False, False

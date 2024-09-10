@@ -9,23 +9,7 @@ from const import bot
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'DavinCHBot.settings')
 django.setup()
-
-
 from users.models import User
-
-
-
-def enter_check_photo(message, chat_id, user, simbol):
-    if message.content_type != 'photo':
-        msg = bot.send_message(chat_id=chat_id, text='Отправьте фотографию')
-        bot.register_next_step_handler(msg, enter_category, chat_id, user)
-    else:
-        avatar_id = message.photo[-1].file_id
-        admin = random.choice(User.objects.filter(is_admin=True))
-        text = f'{user.name}, {user.age}, {user.category}\n' \
-               f'{user.description}\n\n' \
-               f'Жест для проверки: {simbol}'
-        bot.send_photo(chat_id=admin.chat_id, photo=avatar_id, caption=text, reply_markup=buttons.check(user.chat_id))
 
 
 def create_account(chat_id, name, age, gender, category, description, find_age, find_gender, avatar_id, city, latitude,
@@ -50,8 +34,8 @@ def create_account(chat_id, name, age, gender, category, description, find_age, 
 
 def enter_city(message, chat_id, name, age, gender, category, description, find_age, find_gender, avatar_id):
     if message.content_type == 'text':
-        name = message.text.lower()
-        city, latitude, longitude = coord.get_coord_by_name(name)
+        city_name = message.text.lower()
+        city, latitude, longitude = coord.get_coord_by_name(city_name)
         if not city:
             msg = bot.send_message(chat_id=chat_id, text='Введите верное название города',
                                    reply_markup=buttons.send_locaton())

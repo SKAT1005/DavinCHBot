@@ -6,7 +6,7 @@ class User(models.Model):
     age = models.IntegerField(blank=True, null=True, verbose_name='Возраст')
     gender = models.CharField(max_length=16, blank=True, null=True, verbose_name='Гендер')
     category = models.CharField(max_length=32, blank=True, null=True, verbose_name='Для чего в боте')
-    avatar = models.ImageField(blank=True, null=True, verbose_name='Аватарка пользователя')
+    avatar = models.ImageField(blank=True, upload_to='avatars', null=True, verbose_name='Аватарка пользователя')
     city = models.CharField(max_length=128, verbose_name='Город')
     check_photo = models.ImageField(blank=True, null=True, verbose_name='Фото для проверки')
     description = models.TextField(blank=True, null=True, verbose_name='Описание о себе')

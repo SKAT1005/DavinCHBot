@@ -24,6 +24,7 @@ def menu(chat_id, user):
 def start(message):
     # User.objects.all().delete()
     chat_id = message.chat.id
+    print(chat_id)
     user = User.objects.filter(chat_id=chat_id).first()
     if not user:
         msg = bot.send_message(chat_id=chat_id, text='Напишите как вас зовут', reply_markup=None)

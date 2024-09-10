@@ -88,3 +88,34 @@ def profile_menu():
     menu = types.InlineKeyboardButton('Вернуться назад', callback_data='menu')
     markup.add(edit_age, edit_avatar, edit_city, edit_description, menu)
     return markup
+
+
+def questionnaire_menu(user_id):
+    markup = types.InlineKeyboardMarkup(row_width=4)
+    like = types.InlineKeyboardButton('💗', callback_data=f'profiles|like|{user_id}')
+    dislike = types.InlineKeyboardButton('🚫', callback_data='profiles')
+    sleep = types.InlineKeyboardButton('😴', callback_data='profiles|sleep')
+    send_message_or_video = types.InlineKeyboardButton('🎥/💬', callback_data=f'profiles|send_message_or_video|{user_id}')
+    report = types.InlineKeyboardButton('Пожаловаться', callback_data=f'profiles|report|{user_id}')
+    markup.add(like, dislike, sleep, send_message_or_video, report)
+    return markup
+
+def watch_questionnaire():
+    markup = types.InlineKeyboardMarkup(row_width=1)
+    watch = types.InlineKeyboardButton('Продолжить смотреть анкты', callback_data='profiles')
+    markup.add(watch)
+    return markup
+def answer_on_like(user_id):
+    markup = types.InlineKeyboardMarkup(row_width=2)
+    like = types.InlineKeyboardButton('💗', callback_data=f'profiles|answer_like|{user_id}')
+    dislike = types.InlineKeyboardButton('🚫', callback_data='profiles')
+    report = types.InlineKeyboardButton('Пожаловаться', callback_data=f'profiles|report|{user_id}')
+    markup.add(like, dislike, report)
+    return markup
+
+
+def send_link_on_chat(user_id):
+    markup = types.InlineKeyboardMarkup(row_width=2)
+    link = types.InlineKeyboardButton('Профиль пользователя', url=f'tg://user?id={user_id}')
+    markup.add(link)
+    return markup

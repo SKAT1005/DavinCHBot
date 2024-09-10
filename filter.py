@@ -7,10 +7,10 @@ import django
 import buttons
 from buttons import category, find_gender, gender
 from const import bot
-from users.models import User
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'DavinCHBot.settings')
 django.setup()
+from users.models import User
 
 def update_users(user):
     find_age = list(map(int, user.find_age.split('-')))

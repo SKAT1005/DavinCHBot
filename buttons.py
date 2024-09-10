@@ -38,8 +38,7 @@ def find_age():
     age2 = types.KeyboardButton('25-35')
     age3 = types.KeyboardButton('45-55')
     age4 = types.KeyboardButton('55-65')
-    age5 = types.KeyboardButton('65+')
-    markup.add(age1, age2, age3, age4, age5)
+    markup.add(age1, age2, age3, age4)
     return markup
 
 

@@ -1,16 +1,12 @@
-import math
 import os
-import time
 
 import django
 
 import buttons
-from buttons import category, find_gender, gender
 from const import bot
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'DavinCHBot.settings')
 django.setup()
-from users.models import User
 
 
 

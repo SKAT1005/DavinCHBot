@@ -2,29 +2,17 @@ import os
 import random
 
 import django
-from django.core.files import File
-from telebot import types
 
 import buttons
 import coord
-from const import bot, simbols
+from const import bot
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'DavinCHBot.settings')
 django.setup()
 
-# Import module
-from geopy.geocoders import Nominatim
+
 from users.models import User
 
-
-def get_city(message):
-    geolocator = Nominatim(user_agent="my_geocoder")
-    Latitude = str(message.location.latitude)
-    Longitude = str(message.location.longitude)
-    location = geolocator.geocode(Latitude + "," + Longitude)
-    print(location)
-    city = location.raw['display_name'].split(', ')[-7].lower()
-    return city
 
 
 def enter_check_photo(message, chat_id, user, simbol):
@@ -53,6 +41,8 @@ def create_account(chat_id, name, age, gender, category, description, find_age, 
         description=description,
         find_age=find_age,
         find_gender=find_gender,
+        longitude=longitude,
+        latitude=latitude,
         is_checked=True
     )
     bot.send_message(chat_id=chat_id, text='Регистрация прошла успешно', reply_markup=buttons.go_to_menu())

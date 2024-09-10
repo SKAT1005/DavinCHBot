@@ -1,6 +1,5 @@
 import os
 import random
-import time
 
 import django
 from django.core.files import File
@@ -9,7 +8,6 @@ from telebot import types
 import buttons
 import coord
 from const import bot, simbols
-from registration import get_city
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'DavinCHBot.settings')
 django.setup()
@@ -122,7 +120,7 @@ def edit_age(message, chat_id, user):
 
 
 def profile_menu(chat_id, user):
-    text = f'{user.name}, {user.age}, {user.city}, {user.category}\n\n' \
+    text = f'{user.status()} {user.name}, {user.age}, {user.city}, {user.category}\n\n' \
            f'О себе: {user.description}'
     medias = []
     if user.avatar1:
@@ -164,10 +162,11 @@ def verefi(message, chat_id, user, simbol):
         avatar_id = message.photo[-1].file_id
         file_info = bot.get_file(avatar_id)
         downloaded_file = bot.download_file(file_info.file_path)
-        path = f'verefi/{chat_id}.jpg'
+        path = f'verefi.jpg'
         with open(path, 'wb') as new_file:
             new_file.write(downloaded_file)
         user.check_photo = File(open(path, 'rb'))
+        user.save(update_fields=['check_photo'])
         profile_menu(chat_id=chat_id, user=user)
 
 
@@ -202,5 +201,5 @@ def callback(data, chat_id, user):
     elif data[0] == 'verefi':
         simbol = random.choice(simbols)
         text = f'Для подтверждения вашего аккаунта, отправьте вашу фотографию, на которой вы показываете следующий символ следующий символ: {simbol}'
-        msg = bot.send_photo(chat_id=chat_id, photo=user.avatar, caption=text)
+        msg = bot.send_message(chat_id=chat_id, text=text, reply_markup=buttons.go_back('edit_profile'))
         bot.register_next_step_handler(msg, verefi, chat_id, user, simbol)

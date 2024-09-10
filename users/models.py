@@ -14,7 +14,7 @@ class User(models.Model):
     avatar2 = models.CharField(blank=True, max_length=256, null=True, verbose_name='Аватарка пользователя')
     avatar3 = models.CharField(blank=True, max_length=256, null=True, verbose_name='Аватарка пользователя')
     city = models.CharField(max_length=128, verbose_name='Город')
-    check_photo = models.ImageField(blank=True, null=True, verbose_name='Фото для проверки')
+    check_photo = models.ImageField(blank=True, upload_to='verefi', null=True, verbose_name='Фото для проверки')
     description = models.TextField(blank=True, null=True, verbose_name='Описание о себе')
     find_age = models.CharField(max_length=8, blank=True, null=True, verbose_name='Какой возраст предпочитает')
     find_gender = models.CharField(max_length=16, blank=True, null=True, verbose_name='Какой гендер ищет')

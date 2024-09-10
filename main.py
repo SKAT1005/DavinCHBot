@@ -29,7 +29,7 @@ def add_media(medias, avatar_data):
 
 
 def menu(chat_id, user):
-    text = f'{user.is_checked}{user.name}, {user.age}, {user.city}, {user.category}\n\n' \
+    text = f'{user.status()} {user.name}, {user.age}, {user.city}, {user.category}\n\n' \
            f'О себе: {user.description}'
     medias = []
     if user.avatar1:

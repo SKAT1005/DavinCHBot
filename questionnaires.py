@@ -1,6 +1,5 @@
 import math
 import os
-import random
 
 import django
 from telebot import types
@@ -80,7 +79,7 @@ def add_media(medias, avatar_data):
 
 
 def send_profile(chat_id, user, markup):
-    text = f'{user.name}, {user.age}, {user.city}, {user.category}\n\n' \
+    text = f'{user.status()} {user.name}, {user.age}, {user.city}, {user.category}\n\n' \
            f'О себе: {user.description}'
     medias = []
     if user.avatar1:

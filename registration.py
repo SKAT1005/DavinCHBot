@@ -59,7 +59,8 @@ def create_account(chat_id, name, age, gender, category, description, find_age, 
         category=category,
         description=description,
         find_age=find_age,
-        find_gender=find_gender
+        find_gender=find_gender,
+        is_checked=True
     )
     send_check_photo(chat_id=chat_id, user=user)
     bot.send_message(chat_id=chat_id, text='Ваш аккаунт отправлен на проверку, ожидайте ее результатов')

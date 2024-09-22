@@ -191,6 +191,7 @@ def edit_name(message, chat_id, user):
             user.save(update_fields=['name'])
             profile_menu(chat_id=chat_id, user=user)
 
+
 def edit_gender(message, chat_id, user):
     if message.content_type != 'text':
         msg = bot.send_message(chat_id=chat_id, text='Выбери пол из клавиатуры внизу экрана',
@@ -206,6 +207,23 @@ def edit_gender(message, chat_id, user):
             user.gender = gender
             user.save(update_fields=['name'])
             profile_menu(chat_id=chat_id, user=user)
+
+
+# def edit_category(message, chat_id, user):
+#     if message.content_type != 'text':
+#         msg = bot.send_message(chat_id=chat_id, text='Выбери категорию из клавиатуры внизу экрана',
+#                                reply_markup=buttons.category())
+#         bot.register_next_step_handler(msg, edit_category, chat_id, user)
+#     else:
+#         category = message.text
+#         if category not in ['Серьёзные отношения💞', 'Свободные отношения❤️‍🔥', 'Дружба🫡', 'Не определился🫠']:
+#             msg = bot.send_message(chat_id=chat_id, text='Выбери категорию из клавиатуры внизу экрана',
+#                                    reply_markup=buttons.category())
+#             bot.register_next_step_handler(msg, edit_category, chat_id, user)
+#         else:
+#             user.category = category
+#             user.save(update_fields=['category'])
+#             profile_menu(chat_id=chat_id, user=user)
 
 
 def callback(data, chat_id, user):
@@ -247,3 +265,7 @@ def callback(data, chat_id, user):
     elif data[0] == 'gender':
         msg = bot.send_message(chat_id=chat_id, text='Какой твой пол', reply_markup=buttons.gender())
         bot.register_next_step_handler(msg, edit_gender, chat_id, user)
+    # elif data[0] == 'category':
+    #     msg = bot.send_message(chat_id=chat_id, text='Выбери для чего ты хочешь использовать бота',
+    #                            reply_markup=buttons.category())
+    #     bot.register_next_step_handler(msg, edit_category, chat_id, user)

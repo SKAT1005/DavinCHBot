@@ -21,7 +21,10 @@ class User(models.Model):
     latitude = models.FloatField(default=1, verbose_name='Широта')
     longitude = models.FloatField(default=1, verbose_name='Долгота')
     active = models.BooleanField(default=True, verbose_name='Активен ли поиск')
-    last_active = models.DateTimeField(default=datetime.datetime.now(), verbose_name='Время последней активности')
+    like_users = models.ManyToManyField('LikeUsers', blank=True, null=True,
+                                        verbose_name='Пользователи, которые лайкнули анкету')
+    last_active = models.DateTimeField(default=timezone.now(), verbose_name='Время последней активности')
+    last_like = models.DateTimeField(default=timezone.now(), verbose_name='Время последней отправки сообщения о лайках')
     is_checked = models.BooleanField(default=False, verbose_name='Проеверен ли аккаунт')
     is_admin = models.BooleanField(default=False, verbose_name='Является ли пользователь админом')
     is_ban = models.BooleanField(default=False, verbose_name='В бане ли аккаунт')
@@ -29,6 +32,11 @@ class User(models.Model):
     def update_last_active(self):
         self.last_active = timezone.now()
         self.save(update_fields=['last_active'])
+
+    def update_last_like(self):
+        self.last_like = timezone.now()
+        self.save(update_fields=['last_like'])
+
     def status(self):
         if self.is_checked:
             return '✅'
@@ -41,7 +49,14 @@ class Image(models.Model):
 
 class Status(models.Model):
     type = models.CharField(max_length=64, verbose_name='Тип симпатии')
-    form_user = models.ForeignKey(User, related_name='to_status', on_delete=models.CASCADE, verbose_name='Человек, который поставил лайк/дизлайк/жалобу')
-    to_user = models.ForeignKey(User, related_name='from_status', on_delete=models.CASCADE, verbose_name='Человек, которому поставили лайк/дизлайк/жалобу')
+    form_user = models.ForeignKey(User, related_name='to_status', on_delete=models.CASCADE,
+                                  verbose_name='Человек, который поставил лайк/дизлайк/жалобу')
+    to_user = models.ForeignKey(User, related_name='from_status', on_delete=models.CASCADE,
+                                verbose_name='Человек, которому поставили лайк/дизлайк/жалобу')
     have_answer = models.BooleanField(default=False, verbose_name='Есть ли взаимность')
     time = models.DateTimeField(auto_now_add=True, verbose_name='Дата симпатии')
+
+
+class LikeUsers(models.Model):
+    send_like = models.ForeignKey(User, related_name='send_like', on_delete=models.CASCADE)
+    message_id = models.CharField(max_length=512, blank=True, null=True, verbose_name='ID сообщения')

@@ -6,6 +6,7 @@ import django
 import buttons
 import coord
 from const import bot
+from menu import menu
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'DavinCHBot.settings')
 django.setup()
@@ -14,7 +15,7 @@ from users.models import User
 
 def create_account(chat_id, name, age, gender, category, description, find_age, find_gender, avatar_id, city, latitude,
                    longitude):
-    User.objects.create(
+    user = User.objects.create(
         chat_id=chat_id,
         name=name,
         age=age,
@@ -30,7 +31,7 @@ def create_account(chat_id, name, age, gender, category, description, find_age, 
         longitude=longitude,
         latitude=latitude,
     )
-    bot.send_message(chat_id=chat_id, text='Регистрация прошла успешно', reply_markup=buttons.go_to_menu())
+    menu(chat_id=chat_id, user = user)
 
 
 def enter_city(message, chat_id, name, age, gender, category, description, find_age, find_gender, avatar_id):

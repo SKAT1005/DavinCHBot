@@ -95,6 +95,6 @@ def callback(data, chat_id, user):
                                reply_markup=buttons.find_gender())
         bot.register_next_step_handler(msg, edit_gender, chat_id, user)
     elif data[0] == 'category':
-        msg = bot.send_message(chat_id=chat_id, text='Выбери для чего ты хочешь использовать бота',
+        msg = bot.send_message(chat_id=chat_id, text='Выбери какие категории ты хочешь искать',
                                reply_markup=buttons.category())
         bot.register_next_step_handler(msg, edit_category, chat_id, user)

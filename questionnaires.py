@@ -1,8 +1,10 @@
+import datetime
 import math
 import os
 from itertools import chain
 
 import django
+from django.utils import timezone
 from telebot import types
 
 import buttons
@@ -12,7 +14,7 @@ from profile import profile_menu
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'DavinCHBot.settings')
 django.setup()
 
-from users.models import User, Status
+from users.models import User, Status, LikeUsers
 
 
 def is_point_in_circle(latitude, longitude, circle_center_latitude, circle_center_longitude, radius_km=100):
@@ -93,30 +95,60 @@ def send_profile(chat_id, user, markup):
     bot.send_message(chat_id=chat_id, text=text, reply_markup=markup)
 
 
+def send_message_to_questionnaire(questionnaire):
+    if questionnaire.last_like.timestamp() <= (timezone.now() - datetime.timedelta(minutes=5)).timestamp():
+        text = f'Ваша заявка понравилась {questionnaire.like_users.all().count()} людям'
+        bot.send_message(chat_id=questionnaire.chat_id, text=text, reply_markup=buttons.watch_like())
+        questionnaire.update_last_like()
+
+
 def like(chat_id, user, questionnaire_chat_id):
-    try:
-        bot.send_message(chat_id=questionnaire_chat_id, text='Ваша заявка понравилась одному человеку')
-        send_profile(questionnaire_chat_id, user, buttons.answer_on_like(chat_id))
-    except Exception as e:
-        pass
+    questionnaire = User.objects.get(chat_id=questionnaire_chat_id)
+    like_user = LikeUsers.objects.create(send_like=user)
+    questionnaire.like_users.add(like_user)
+    send_message_to_questionnaire(questionnaire=questionnaire)
     send_questionnaires(chat_id=chat_id, user=user)
 
 
 def send_message_or_video(message, chat_id, user, questionnaire_chat_id):
-    try:
-        bot.send_message(chat_id=questionnaire_chat_id, text='Ваша заявка понравилась одному человеку')
-        send_profile(questionnaire_chat_id, user, buttons.answer_on_like(chat_id))
-        bot.copy_message(chat_id=questionnaire_chat_id, from_chat_id=chat_id, message_id=message.id)
-    except Exception as e:
-        pass
+    questionnaire = User.objects.get(chat_id=questionnaire_chat_id)
+    like_user = LikeUsers.objects.create(send_like=user, message_id=message.id)
+    questionnaire.like_users.add(like_user)
+    questionnaire.save(update_fields='like_users')
+    send_message_to_questionnaire(questionnaire=questionnaire)
     send_questionnaires(chat_id=chat_id, user=user)
 
 
+def watch_like(questionnaire_chat_id, questionnaire):
+    if questionnaire.like_users.all():
+        like = questionnaire.like_users.first()
+        user = like.send_like
+        send_profile(questionnaire_chat_id, user, buttons.answer_on_like(user.chat_id))
+        if like.message_id:
+            try:
+                bot.copy_message(chat_id=questionnaire_chat_id, from_chat_id=user.chat_id, message_id=like.message_id)
+            except Exception:
+                pass
+        like.delete()
+    else:
+        text = 'У вас закончились анкеты, которые вас лайкнули :('
+        bot.send_message(chat_id=questionnaire_chat_id, text=text, reply_markup=buttons.continue_watch())
+
+
 def answer_like(chat_id, user_id):
-    bot.send_message(chat_id=chat_id, text='Вы можете продолжить общение в ЛС',
-                     reply_markup=buttons.send_link_on_chat(user_id=user_id))
-    bot.send_message(chat_id=user_id, text='Вам ответили взаимностью на ваш лайк. Вы можете продолжить общение в ЛС',
-                     reply_markup=buttons.send_link_on_chat(user_id=chat_id))
+    try:
+        bot.send_message(chat_id=chat_id, text='Вы можете продолжить общение в ЛС',
+                         reply_markup=buttons.send_link_on_chat(user_id=user_id))
+    except Exception:
+        pass
+    try:
+        bot.send_message(chat_id=user_id,
+                         text='Вам ответили взаимностью на ваш лайк. Вы можете продолжить общение в ЛС',
+                         reply_markup=buttons.send_link_on_chat(user_id=chat_id))
+    except Exception:
+        pass
+    questionnaire = User.objects.get(chat_id=chat_id)
+    watch_like(questionnaire_chat_id=chat_id, questionnaire=questionnaire)
 
 
 def report(message, chat_id):
@@ -132,6 +164,7 @@ def add_action(type, user, questionnaire_chat_id):
         type=type
     )
 
+
 def add_answer(user_id, to_user):
     user = User.objects.get(chat_id=user_id)
     Status.objects.get_or_create(
@@ -140,6 +173,7 @@ def add_answer(user_id, to_user):
         type='лайк',
         have_answer=True
     )
+
 
 def callback(data, chat_id, user):
     if len(data) == 0:
@@ -158,9 +192,14 @@ def callback(data, chat_id, user):
                                text='Отправьте сообщение. Это может быть текст, фотография, видео, кружочек или голосовое')
         bot.register_next_step_handler(msg, send_message_or_video, chat_id, user, data[1])
     elif data[0] == 'answer_like':
-        add_answer(user_id=data[1], to_user=user)
+        add_action('лайк', user, data[1])
         answer_like(chat_id=chat_id, user_id=data[1])
+    elif data[0] == 'answer_like':
+        add_action('дизлайк', user, data[1])
+        watch_like(questionnaire_chat_id=chat_id, questionnaire=user)
     elif data[0] == 'report':
         add_action('жалоба', user, data[1])
         msg = bot.send_message(chat_id=chat_id, text='Опишите причину вашей жалобы')
         bot.register_next_step_handler(msg, report, chat_id)
+    elif data[0] == 'watch_like':
+        watch_like(questionnaire_chat_id=chat_id, questionnaire=user)

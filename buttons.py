@@ -63,10 +63,11 @@ def check(id):
 def menu():
     markup = types.InlineKeyboardMarkup(row_width=1)
     watch = types.InlineKeyboardButton('Смотреть анкты', callback_data='profiles')
+    create = types.InlineKeyboardButton('Смотреть анкеты, которым я понравился', callback_data='profiles|watch_like')
     edit_filter = types.InlineKeyboardButton('Настроить поиск', callback_data='filter')
     verefi = types.InlineKeyboardButton('Верефикация анкеты', callback_data='edit_profile|verefi')
     edit_profile = types.InlineKeyboardButton('Настроить анкету', callback_data='edit_profile')
-    markup.add(watch, edit_filter, verefi, edit_profile)
+    markup.add(watch, create, edit_filter, verefi, edit_profile)
     return markup
 
 
@@ -85,6 +86,7 @@ def profile_menu():
     edit_avatar = types.InlineKeyboardButton('Изменить фотографию', callback_data='edit_profile|photo')
     edit_name = types.InlineKeyboardButton('Изменить имя', callback_data='edit_profile|name')
     edit_gender = types.InlineKeyboardButton('Изменить пол', callback_data='edit_profile|gender')
+    edit_category = types.InlineKeyboardButton('Изменить категорию поиска', callback_data='edit_profile|category')
     edit_city = types.InlineKeyboardButton('Изменить город', callback_data='edit_profile|city')
     edit_description = types.InlineKeyboardButton('Изменить описание', callback_data='edit_profile|description')
     edit_age = types.InlineKeyboardButton('Изменить возраст', callback_data='edit_profile|age')
@@ -116,7 +118,7 @@ def watch_questionnaire():
 def answer_on_like(user_id):
     markup = types.InlineKeyboardMarkup(row_width=2)
     like = types.InlineKeyboardButton('💗', callback_data=f'profiles|answer_like|{user_id}')
-    dislike = types.InlineKeyboardButton('🚫', callback_data='profiles')
+    dislike = types.InlineKeyboardButton('🚫', callback_data=f'profiles|answer_dislike|{user_id}')
     report = types.InlineKeyboardButton('Пожаловаться', callback_data=f'profiles|report|{user_id}')
     markup.add(like, dislike, report)
     return markup
@@ -157,4 +159,20 @@ def create():
     markup = types.InlineKeyboardMarkup()
     create = types.InlineKeyboardButton('Создать анкету', callback_data='create')
     markup.add(create)
+    return markup
+
+
+def watch_like():
+    markup = types.InlineKeyboardMarkup()
+    create = types.InlineKeyboardButton('Смотреть анкеты', callback_data='profiles|watch_like')
+    markup.add(create)
+    return markup
+
+
+
+def continue_watch():
+    markup = types.InlineKeyboardMarkup(row_width=1)
+    watch = types.InlineKeyboardButton('Начать просмотр новых анкет', callback_data='profiles')
+    menu = types.InlineKeyboardButton('В меню', callback_data='menu')
+    markup.add(watch, menu)
     return markup

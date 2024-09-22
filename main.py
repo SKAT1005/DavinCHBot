@@ -12,6 +12,7 @@ import filter
 import profile
 import questionnaires
 from const import bot
+from menu import menu
 from registration import enter_name
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'DavinCHBot.settings')
@@ -19,30 +20,7 @@ django.setup()
 from users.models import User, Status
 
 
-def add_media(medias, avatar_data):
-    type, media_id = avatar_data.split()
-    if type == 'photo':
-        medias.append(types.InputMediaPhoto(media=media_id))
-    else:
-        medias.append(types.InputMediaVideo(media=media_id))
-    return medias
 
-
-def menu(chat_id, user):
-    text = f'{user.status()} {user.name}, {user.age}, {user.city}, {user.category}\n\n' \
-           f'О себе: {user.description}'
-    medias = []
-    if user.avatar1:
-        medias = add_media(medias, user.avatar1)
-    if user.avatar2:
-        medias = add_media(medias, user.avatar2)
-    if user.avatar3:
-        medias = add_media(medias, user.avatar3)
-    try:
-        bot.send_media_group(chat_id=chat_id, media=medias)
-    except Exception:
-        print(chat_id)
-    bot.send_message(chat_id=chat_id, text=text, reply_markup=buttons.menu())
 
 
 @bot.message_handler(commands=['start'])
@@ -101,18 +79,6 @@ def callback(call):
                 questionnaires.callback(data=data[1:], user=user, chat_id=chat_id)
 
 
-def time_menu():
-    while True:
-        for i in User.objects.all():
-            n = i.last_active.timestamp()
-            m = datetime.datetime.now().timestamp() - (60*5)
-            if n <= m:
-                menu(chat_id=i.chat_id, user=i)
-                i.last_active = timezone.now() + datetime.timedelta(days=365)
-                i.save(update_fields=['last_active'])
-            time.sleep(60)
-
-
 def status():
     while True:
         for i in Status.objects.filter(have_answer=False):
@@ -129,8 +95,6 @@ def status():
 
 
 if __name__ == '__main__':
-    polling_thread_1 = threading.Thread(target=time_menu)
-    polling_thread_1.start()
-    polling_thread_2 = threading.Thread(target=status)
-    polling_thread_2.start()
+    polling_thread = threading.Thread(target=status)
+    polling_thread.start()
     bot.polling(none_stop=True)

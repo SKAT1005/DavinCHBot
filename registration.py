@@ -27,7 +27,6 @@ def create_account(chat_id, name, age, gender, category, description, find_age, 
         find_gender=find_gender,
         longitude=longitude,
         latitude=latitude,
-        is_checked=True
     )
     bot.send_message(chat_id=chat_id, text='Регистрация прошла успешно', reply_markup=buttons.go_to_menu())
 

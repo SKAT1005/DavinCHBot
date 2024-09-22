@@ -77,6 +77,8 @@ def callback(call):
                     bot.delete_message(chat_id=chat_id, message_id=i)
                 except Exception:
                     pass
+            msg = bot.send_message(chat_id=chat_id, text='.', reply_markup=types.ReplyKeyboardRemove())
+            bot.delete_message(chat_id=chat_id, message_id=msg.id)
             if data[0] == 'acept':
                 usr = User.objects.get(chat_id=data[1])
                 usr.is_checked = True

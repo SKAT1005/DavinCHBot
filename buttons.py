@@ -64,8 +64,9 @@ def menu():
     markup = types.InlineKeyboardMarkup(row_width=1)
     watch = types.InlineKeyboardButton('Смотреть анкты', callback_data='profiles')
     edit_filter = types.InlineKeyboardButton('Настроить поиск', callback_data='filter')
+    verefi = types.InlineKeyboardButton('Верефикация анкеты', callback_data='edit_profile|verefi')
     edit_profile = types.InlineKeyboardButton('Настроить анкету', callback_data='edit_profile')
-    markup.add(watch, edit_filter, edit_profile)
+    markup.add(watch, edit_filter, verefi, edit_profile)
     return markup
 
 
@@ -82,14 +83,15 @@ def filter_menu():
 def profile_menu():
     markup = types.InlineKeyboardMarkup(row_width=1)
     edit_avatar = types.InlineKeyboardButton('Изменить фотографию', callback_data='edit_profile|photo')
+    edit_name = types.InlineKeyboardButton('Изменить имя', callback_data='edit_profile|name')
+    edit_gender = types.InlineKeyboardButton('Изменить пол', callback_data='edit_profile|gender')
     edit_city = types.InlineKeyboardButton('Изменить город', callback_data='edit_profile|city')
     edit_description = types.InlineKeyboardButton('Изменить описание', callback_data='edit_profile|description')
     edit_age = types.InlineKeyboardButton('Изменить возраст', callback_data='edit_profile|age')
     go_sleep = types.InlineKeyboardButton('Выйти из поиска', callback_data='edit_profile|go_sleep')
-    verefi = types.InlineKeyboardButton('Верефикация анкеты', callback_data='edit_profile|verefi')
     delite = types.InlineKeyboardButton('Удалить анкету', callback_data='edit_profile|delite')
     menu = types.InlineKeyboardButton('Вернуться назад', callback_data='menu')
-    markup.add(edit_age, edit_avatar, edit_city, edit_description, verefi, go_sleep, delite, menu)
+    markup.add(edit_age, edit_name, edit_gender, edit_avatar, edit_city, edit_description, go_sleep, delite, menu)
     return markup
 
 

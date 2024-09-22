@@ -1,5 +1,6 @@
 import math
 import os
+from itertools import chain
 
 import django
 from telebot import types
@@ -43,13 +44,13 @@ def get_user(user):
         find_gender = ['мужской', 'женский']
     users = User.objects.filter(age__in=age, gender__in=find_gender, category__in=category, active=True)
     for usr in users:
-        if not Status.objects.filter(to_user=usr, form_user=user):
+        if not Status.objects.filter(to_user=usr, form_user=user) and usr != user:
             if is_point_in_circle(latitude=usr.latitude, longitude=usr.longitude, circle_center_latitude=user.latitude,
                                   circle_center_longitude=user.longitude):
                 return usr
-    users = User.objects.filter(age__in=age, gender__in=find_gender)
+    users = User.objects.filter(age__in=age, gender__in=find_gender, active=True)
     for usr in users:
-        if not Status.objects.filter(to_user=usr, form_user=user):
+        if not Status.objects.filter(to_user=usr, form_user=user) and usr != user:
             if is_point_in_circle(latitude=usr.latitude, longitude=usr.longitude, circle_center_latitude=user.latitude,
                                   circle_center_longitude=user.longitude):
                 return usr

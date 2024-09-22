@@ -154,20 +154,58 @@ def photo(chat_id, user):
     bot.send_message(chat_id=chat_id, text='Выберите какую фотографию/видео хотите поменять',
                      reply_markup=buttons.edit_photo())
 
+
 def verefi(message, chat_id, user, simbol):
-    if message.content_type != 'photo':
-        msg = bot.send_message(chat_id=chat_id, text='Отправьте фотографию')
-        bot.register_next_step_handler(msg, verefi, chat_id, user)
+    if not user.is_checked:
+        if message.content_type != 'photo':
+            msg = bot.send_message(chat_id=chat_id, text='Отправьте фотографию')
+            bot.register_next_step_handler(msg, verefi, chat_id, user)
+        else:
+            avatar_id = message.photo[-1].file_id
+            file_info = bot.get_file(avatar_id)
+            downloaded_file = bot.download_file(file_info.file_path)
+            path = f'verefi.jpg'
+            with open(path, 'wb') as new_file:
+                new_file.write(downloaded_file)
+            user.check_photo = File(open(path, 'rb'))
+            user.save(update_fields=['check_photo'])
+            profile_menu(chat_id=chat_id, user=user)
     else:
-        avatar_id = message.photo[-1].file_id
-        file_info = bot.get_file(avatar_id)
-        downloaded_file = bot.download_file(file_info.file_path)
-        path = f'verefi.jpg'
-        with open(path, 'wb') as new_file:
-            new_file.write(downloaded_file)
-        user.check_photo = File(open(path, 'rb'))
-        user.save(update_fields=['check_photo'])
-        profile_menu(chat_id=chat_id, user=user)
+        bot.send_message(chat_id=chat_id, text='Ваша анкета уже верефицирована', reply_markup=buttons.go_to_menu())
+
+
+def edit_name(message, chat_id, user):
+    if message.content_type != 'text':
+        msg = bot.send_message(chat_id=chat_id, text='Напишите как вас зовут',
+                               reply_markup=buttons.go_back('edit_profile'))
+        bot.register_next_step_handler(msg, edit_name, chat_id, user)
+    else:
+        name = message.text
+        ln = len(name)
+        if ln > 100:
+            msg = bot.send_message(chat_id=chat_id, text='Максимальная длина имени 100 символов',
+                                   reply_markup=buttons.go_back('edit_profile'))
+            bot.register_next_step_handler(msg, edit_name, chat_id, user)
+        else:
+            user.name = name
+            user.save(update_fields=['name'])
+            profile_menu(chat_id=chat_id, user=user)
+
+def edit_gender(message, chat_id, user):
+    if message.content_type != 'text':
+        msg = bot.send_message(chat_id=chat_id, text='Выбери пол из клавиатуры внизу экрана',
+                               reply_markup=buttons.gender())
+        bot.register_next_step_handler(msg, edit_gender, chat_id, user)
+    else:
+        gender = message.text
+        if gender not in ['мужской', 'женский']:
+            msg = bot.send_message(chat_id=chat_id, text='Выбери пол из клавиатуры внизу экрана',
+                                   reply_markup=buttons.gender())
+            bot.register_next_step_handler(msg, edit_gender, chat_id, user)
+        else:
+            user.gender = gender
+            user.save(update_fields=['name'])
+            profile_menu(chat_id=chat_id, user=user)
 
 
 def callback(data, chat_id, user):
@@ -203,3 +241,9 @@ def callback(data, chat_id, user):
         text = f'Для подтверждения вашего аккаунта, отправьте вашу фотографию, на которой вы показываете следующий символ следующий символ: {simbol}'
         msg = bot.send_message(chat_id=chat_id, text=text, reply_markup=buttons.go_back('edit_profile'))
         bot.register_next_step_handler(msg, verefi, chat_id, user, simbol)
+    elif data[0] == 'name':
+        msg = bot.send_message(chat_id=chat_id, text='Напишите как вас зовут', reply_markup=None)
+        bot.register_next_step_handler(msg, edit_name, chat_id, user)
+    elif data[0] == 'gender':
+        msg = bot.send_message(chat_id=chat_id, text='Какой твой пол', reply_markup=buttons.gender())
+        bot.register_next_step_handler(msg, edit_gender, chat_id, user)

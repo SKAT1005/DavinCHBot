@@ -18,7 +18,9 @@ def create_account(chat_id, name, age, gender, category, description, find_age, 
         chat_id=chat_id,
         name=name,
         age=age,
-        avatar1=avatar_id,
+        avatar1=avatar_id[0],
+        avatar2=avatar_id[1],
+        avatar3=avatar_id[2],
         city=city,
         gender=gender,
         category=category,
@@ -63,16 +65,35 @@ def enter_city(message, chat_id, name, age, gender, category, description, find_
                                        find_gender, avatar_id)
 
 
-def enter_photo(message, chat_id, name, age, gender, category, description, find_age, find_gender):
-    if message.content_type == 'photo':
-        avatar_id = f'photo {message.photo[-1].file_id}'
-        msg = bot.send_message(chat_id=chat_id,
-                               text='Введите название вашего города или отправьте координаты, нажав кнопку под клавиатурой',
-                               reply_markup=buttons.send_locaton())
-        bot.register_next_step_handler(msg, enter_city, chat_id, name, age, gender, category, description, find_age,
-                                       find_gender, avatar_id)
+def enter_photo(message, chat_id, name, age, gender, category, description, find_age, find_gender, avatar_id=[None, None, None], n=0):
+    if message.content_type == 'photo' and n!=3:
+        avatar_id[n] = f'photo {message.photo[-1].file_id}'
+        if n == 2:
+            msg = bot.send_message(chat_id=chat_id,
+                                   text='Введите название вашего города или отправьте координаты, нажав кнопку под клавиатурой',
+                                   reply_markup=buttons.send_locaton())
+            bot.register_next_step_handler(msg, enter_city, chat_id, name, age, gender, category, description, find_age,
+                                           find_gender, avatar_id)
+        else:
+            msg = bot.send_message(chat_id=chat_id, text='Отправьте еще фотогравию/видео. Если хотите пропустить, нажмите кнопку Пропустить', reply_markup=buttons.skip())
+            bot.register_next_step_handler(msg, enter_photo, chat_id, name, age, gender, category, description,
+                                           find_age,
+                                           find_gender, avatar_id, n+1)
     elif message.content_type == 'video':
-        avatar_id = f'video {message.video.file_id}'
+        avatar_id[n] = f'video {message.video.file_id}'
+        if n == 2:
+            msg = bot.send_message(chat_id=chat_id,
+                                   text='Введите название вашего города или отправьте координаты, нажав кнопку под клавиатурой',
+                                   reply_markup=buttons.send_locaton())
+            bot.register_next_step_handler(msg, enter_city, chat_id, name, age, gender, category, description, find_age,
+                                           find_gender, avatar_id)
+        else:
+            msg = bot.send_message(chat_id=chat_id,
+                                   text='Отправьте еще фотогравию/видео. Если хотите пропустить, нажмите кнопку Пропустить', reply_markup=buttons.skip())
+            bot.register_next_step_handler(msg, enter_photo, chat_id, name, age, gender, category, description,
+                                           find_age,
+                                           find_gender, avatar_id, n + 1)
+    elif message.content_type == 'text' and message.text == 'Пропустить':
         msg = bot.send_message(chat_id=chat_id,
                                text='Введите название вашего города или отправьте координаты, нажав кнопку под клавиатурой',
                                reply_markup=buttons.send_locaton())

@@ -14,7 +14,7 @@ django.setup()
 from users.models import User, Status
 
 
-def is_point_in_circle(latitude, longitude, circle_center_latitude, circle_center_longitude, radius_km=5):
+def is_point_in_circle(latitude, longitude, circle_center_latitude, circle_center_longitude, radius_km=100):
     # Преобразуем углы в радианы
     latitude = math.radians(latitude)
     longitude = math.radians(longitude)
@@ -33,7 +33,7 @@ def is_point_in_circle(latitude, longitude, circle_center_latitude, circle_cente
 
 
 def get_user(user):
-    from_age, to_age = user.find_age.split('-')
+    from_age, to_age = map(int, user.find_age.split('-'))
     age = [i for i in range(from_age, to_age + 1)]
     category = [user.category]
     find_gender = [user.find_gender]
@@ -41,7 +41,7 @@ def get_user(user):
         category = ['Серьёзные отношения💞', 'Свободные отношения❤️‍🔥', 'Дружба🫡', 'Не определился🫠']
     if find_gender[0] == 'любой':
         find_gender = ['мужской', 'женский']
-    users = User.objects.filter(age__in=age, gender__in=find_gender, category__in=category)
+    users = User.objects.filter(age__in=age, gender__in=find_gender, category__in=category, active=True)
     for usr in users:
         if not Status.objects.filter(to_user=usr, form_user=user):
             if is_point_in_circle(latitude=usr.latitude, longitude=usr.longitude, circle_center_latitude=user.latitude,
@@ -61,7 +61,7 @@ def send_questionnaires(chat_id, user):
         questionnaire = get_user(user=user)
         if not questionnaire:
             raise Exception
-    except Exception:
+    except Exception as e:
         bot.send_message(chat_id=chat_id,
                          text='К сожалению, анкет, которые подходят к вашим фильтрам нет. Попробуйте обновить ваши фильтры поиска',
                          reply_markup=buttons.go_to_menu())
@@ -132,7 +132,7 @@ def add_action(type, user, questionnaire_chat_id):
     )
 
 def add_answer(user_id, to_user):
-    user = User.objects.get(user_id=user_id)
+    user = User.objects.get(chat_id=user_id)
     Status.objects.get_or_create(
         form_user=user,
         to_user=to_user,

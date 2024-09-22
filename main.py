@@ -38,7 +38,10 @@ def menu(chat_id, user):
         medias = add_media(medias, user.avatar2)
     if user.avatar3:
         medias = add_media(medias, user.avatar3)
-    bot.send_media_group(chat_id=chat_id, media=medias)
+    try:
+        bot.send_media_group(chat_id=chat_id, media=medias)
+    except Exception:
+        print(chat_id)
     bot.send_message(chat_id=chat_id, text=text, reply_markup=buttons.menu())
 
 

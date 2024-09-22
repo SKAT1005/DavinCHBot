@@ -26,7 +26,7 @@ def edit_photo(message, chat_id, user, number):
         user.save()
         photo(chat_id=chat_id, user=user)
     elif message.content_type == 'video':
-        avatar_id = f'photo {message.video.file_id}'
+        avatar_id = f'video {message.video.file_id}'
         if number == '1':
             user.avatar1 = avatar_id
         elif number == '2':

@@ -66,7 +66,7 @@ def send_questionnaires(chat_id, user):
             raise Exception
     except Exception as e:
         bot.send_message(chat_id=chat_id,
-                         text='К сожалению, анкет, которые подходят к вашим фильтрам нет. Попробуйте обновить ваши фильтры поиска',
+                         text='К сожалению, подходящие для тебя анкеты закончились. Попробуй обновить фильтры поиска🥹',
                          reply_markup=buttons.go_to_menu())
     else:
         send_profile(chat_id, questionnaire, buttons.questionnaire_menu(questionnaire.chat_id))
@@ -85,13 +85,12 @@ def send_profile(chat_id, user, markup):
     text = f'{user.status()} {user.name}, {user.age}, {user.city}, {user.category}\n\n' \
            f'О себе: {user.description}'
     medias = []
-    if user.avatar1:
-        medias = add_media(medias, user.avatar1)
-    if user.avatar2:
-        medias = add_media(medias, user.avatar2)
-    if user.avatar3:
-        medias = add_media(medias, user.avatar3)
-    bot.send_media_group(chat_id=chat_id, media=medias)
+    for i in user.avatars.all()[:3]:
+        medias = add_media(medias, i.file_id)
+    try:
+        bot.send_media_group(chat_id=chat_id, media=medias)
+    except Exception:
+        pass
     bot.send_message(chat_id=chat_id, text=text, reply_markup=markup)
 
 
@@ -134,9 +133,8 @@ def watch_like(questionnaire_chat_id, questionnaire):
                 bot.copy_message(chat_id=questionnaire_chat_id, from_chat_id=user.chat_id, message_id=like.message_id)
             except Exception:
                 pass
-        like.delete()
     else:
-        text = 'У вас закончились анкеты, которые вас лайкнули :('
+        text = 'Мэтчей пока нет🥲'
         bot.send_message(chat_id=questionnaire_chat_id, text=text, reply_markup=buttons.continue_watch())
 
 
@@ -144,15 +142,19 @@ def answer_like(chat_id, user_id):
     try:
         bot.send_message(chat_id=chat_id, text='Вы можете продолжить общение в ЛС',
                          reply_markup=buttons.send_link_on_chat(user_id=user_id))
-    except Exception:
+    except Exception as e:
         pass
     try:
         bot.send_message(chat_id=user_id,
                          text='Вам ответили взаимностью на ваш лайк. Вы можете продолжить общение в ЛС',
                          reply_markup=buttons.send_link_on_chat(user_id=chat_id))
-    except Exception:
+    except Exception as e:
         pass
     questionnaire = User.objects.get(chat_id=chat_id)
+    user = User.objects.get(chat_id=user_id)
+    for i in questionnaire.like_users.all():
+        if i.send_like == user:
+            i.delete()
     watch_like(questionnaire_chat_id=chat_id, questionnaire=questionnaire)
 
 

@@ -12,12 +12,12 @@ from menu import menu
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'DavinCHBot.settings')
 django.setup()
-from users.models import User
+from users.models import User, Photo
 
 
 def create_account(chat_id, name, age, gender, category, description, find_age, find_gender, city, latitude,
                    longitude):
-    User.objects.create(
+    User.objects.get_or_create(
         chat_id=chat_id,
         name=name,
         age=age,
@@ -30,35 +30,49 @@ def create_account(chat_id, name, age, gender, category, description, find_age, 
         longitude=longitude,
         latitude=latitude,
     )
-    bot.send_message(chat_id=chat_id, text='Отправьте нам до трех своих фотографий')
+    bot.send_message(chat_id=chat_id, text='Отправьте нам до трех своих фотографий', reply_markup=types.ReplyKeyboardRemove())
+
 
 def edit_photo(message, chat_id, user, number):
     if message.content_type == 'photo':
         avatar_id = f'photo {message.photo[-1].file_id}'
         if number == '1':
-            user.avatar1 = avatar_id
-        elif number == '2':
-            user.avatar2 = avatar_id
+            avatar = user.avatars.all()[0]
+            avatar.file_id = avatar_id
+            avatar.save()
         else:
-            user.avatar3 = avatar_id
+            try:
+                avatar = user.avatars.all()[int(number) - 1]
+                avatar.file_id = avatar_id
+                avatar.save()
+            except Exception:
+                avatar = Photo.objects.create(file_id=avatar_id)
+                user.avatars.add(avatar)
         user.is_checked = False
-        user.save(update_fields=['avatar1', 'avatar2', 'avatar3'])
         photo(chat_id=chat_id, user=user)
     elif message.content_type == 'video':
         avatar_id = f'video {message.video.file_id}'
         if number == '1':
-            user.avatar1 = avatar_id
-        elif number == '2':
-            user.avatar2 = avatar_id
+            avatar = user.avatars.all()[0]
+            avatar.file_id = avatar_id
+            avatar.save()
         else:
-            user.avatar3 = avatar_id
+            try:
+                avatar = user.avatars.all()[int(number) - 1]
+                avatar.file_id = avatar_id
+                avatar.save()
+            except Exception:
+                avatar = Photo.objects.create(file_id=avatar_id)
+                user.avatars.add(avatar)
         user.is_checked = False
-        user.save(['avatar1', 'avatar2', 'avatar3'])
+        user.save(['is_checked'])
         photo(chat_id=chat_id, user=user)
     else:
         msg = bot.send_message(chat_id=chat_id, text='Отправьте фотографию/видео',
                                reply_markup=buttons.go_back('edit_profile|photo'))
         bot.register_next_step_handler(msg, edit_photo, chat_id, user, number)
+
+
 def add_media(medias, avatar_data):
     type, media_id = avatar_data.split()
     if type == 'photo':
@@ -70,15 +84,12 @@ def add_media(medias, avatar_data):
 
 def photo(chat_id, user):
     medias = []
-    if user.avatar1:
-        medias = add_media(medias, user.avatar1)
-    if user.avatar2:
-        medias = add_media(medias, user.avatar2)
-    if user.avatar3:
-        medias = add_media(medias, user.avatar3)
+    for i in user.avatars.all()[:3]:
+        medias = add_media(medias, i.file_id)
     bot.send_media_group(chat_id=chat_id, media=medias)
-    bot.send_message(chat_id=chat_id, text='Выберите какую фотографию/видео хотите поменять',
+    bot.send_message(chat_id=chat_id, text='Все готово, идем дальше?🙂',
                      reply_markup=buttons.first_edit_photo())
+
 
 def add_photo(chat_id, message):
     content_type = message.content_type
@@ -87,36 +98,33 @@ def add_photo(chat_id, message):
             avatar_id = f'photo {message.photo[-1].file_id}'
         else:
             avatar_id = f'video {message.video.file_id}'
-        time.sleep(random.uniform(0.00001, 0.005))
+        # time.sleep(random.uniform(0.00001, 0.005))
         user = User.objects.get(chat_id=chat_id)
-        if not user.avatar1:
-            user.avatar1 += f'{avatar_id}'
-            user.save(update_fields=['avatar1'])
-            bot.send_message(chat_id=chat_id, text='Добавлена 1/3 фотографий. Отправьте еще или перейдите к просмотру, нажав кнопку под клавиатурой', reply_markup=buttons.watch_photo())
-        elif not user.avatar2:
-            user.avatar2 = avatar_id
-            user.save(update_fields=['avatar2'])
-            bot.send_message(chat_id=chat_id, text='Добавлена 2/3 фотографий. Отправьте еще или перейдите к просмотру, нажав кнопку под клавиатурой',
+        avatar_count = user.avatars.all().count()
+        if avatar_count < 2:
+            avatar = Photo.objects.create(file_id=f'{avatar_id}')
+            user.avatars.add(avatar)
+            bot.send_message(chat_id=chat_id,
+                             text=f'Фотография/видео добавлено',
                              reply_markup=buttons.watch_photo())
-        elif not user.avatar3:
-            user.avatar3 = avatar_id
+        elif avatar_count == 2:
+            avatar = Photo.objects.create(file_id=f'{avatar_id}')
+            user.avatars.add(avatar)
             user.add_photo = 'step 2'
-            user.save(update_fields=['avatar3', 'add_photo'])
+            user.save(update_fields=['add_photo'])
             photo(chat_id=chat_id, user=user)
 
     else:
-        if user.avatar1 and content_type == 'text' and message.text == 'Смотреть мои фотографии':
+        user = User.objects.get(chat_id=chat_id)
+        count_avatars = user.avatars.all().count()
+        if count_avatars and content_type == 'text' and message.text == 'Смотреть мои фотографии':
             user.add_photo = 'step 2'
             user.save(update_fields=['add_photo'])
             photo(chat_id=chat_id, user=user)
         else:
-            if user.avatar2:
+            if count_avatars:
                 bot.send_message(chat_id=chat_id,
-                                 text='Добавлена 2/3 фотографий. Отправьте еще или перейдите к просмотру, нажав кнопку под клавиатурой',
-                                 reply_markup=buttons.watch_photo())
-            elif user.avatar1:
-                bot.send_message(chat_id=chat_id,
-                                 text='Добавлена 1/3 фотографий. Отправьте еще или перейдите к просмотру, нажав кнопку под клавиатурой',
+                                 text=f'Фотография/видео добавлено',
                                  reply_markup=buttons.watch_photo())
             else:
                 bot.send_message(chat_id=chat_id, text='Отправьте нам до трех своих фотографий')
@@ -157,7 +165,7 @@ def enter_city(message, chat_id, name, age, gender, category, description, find_
 
 def enter_find_gender(message, chat_id, name, age, gender, category, description, find_age):
     if message.content_type != 'text':
-        msg = bot.send_message(chat_id=chat_id, text='Выбери пол, который ищешь из клавиатуры внизу экрана',
+        msg = bot.send_message(chat_id=chat_id, text='Какой пол тебя интересует?',
                                reply_markup=buttons.find_gender())
         bot.register_next_step_handler(msg, enter_find_gender, chat_id, name, age, gender, category, description,
                                        find_age)
@@ -170,7 +178,7 @@ def enter_find_gender(message, chat_id, name, age, gender, category, description
                                            find_age)
         else:
             msg = bot.send_message(chat_id=chat_id,
-                                   text='Введите название вашего города или отправьте координаты, нажав кнопку под клавиатурой',
+                                   text='Укажи свой город или выбери точную локацию по кнопке ниже:)',
                                    reply_markup=buttons.send_locaton())
             bot.register_next_step_handler(msg, enter_city, chat_id, name, age, gender, category, description, find_age,
                                            find_gender)
@@ -188,7 +196,7 @@ def get_find_age(age):
 
 def enter_description(message, chat_id, name, age, gender, category):
     if message.content_type != 'text':
-        msg = bot.send_message(chat_id=chat_id, text='Напиши о себе(можно пропустить)', reply_markup=buttons.skip())
+        msg = bot.send_message(chat_id=chat_id, text='Расскажи о себе (не обязательно)', reply_markup=buttons.skip())
         bot.register_next_step_handler(msg, enter_description, chat_id, name, age, gender, category)
     else:
         description = message.text
@@ -201,7 +209,7 @@ def enter_description(message, chat_id, name, age, gender, category):
             bot.register_next_step_handler(msg, enter_description, chat_id, name, age, gender, category)
         else:
             find_age = get_find_age(age)
-            msg = bot.send_message(chat_id=chat_id, text='Выбери какой пол ты ищешь',
+            msg = bot.send_message(chat_id=chat_id, text='Какой пол тебя интересует?',
                                    reply_markup=buttons.find_gender())
             bot.register_next_step_handler(msg, enter_find_gender, chat_id, name, age, gender, category, description,
                                            find_age)
@@ -209,7 +217,7 @@ def enter_description(message, chat_id, name, age, gender, category):
 
 def enter_category(message, chat_id, name, age, gender):
     if message.content_type != 'text':
-        msg = bot.send_message(chat_id=chat_id, text='Выбери категорию из клавиатуры внизу экрана',
+        msg = bot.send_message(chat_id=chat_id, text='Что ты ищешь?🤭',
                                reply_markup=buttons.category())
         bot.register_next_step_handler(msg, enter_category, chat_id, name, age, gender)
     else:
@@ -219,7 +227,7 @@ def enter_category(message, chat_id, name, age, gender):
                                    reply_markup=buttons.category())
             bot.register_next_step_handler(msg, enter_category, chat_id, name, age, gender)
         else:
-            msg = bot.send_message(chat_id=chat_id, text='Напиши о себе(можно пропустить)',
+            msg = bot.send_message(chat_id=chat_id, text='Расскажи о себе (не обязательно)',
                                    reply_markup=buttons.skip())
             bot.register_next_step_handler(msg, enter_description, chat_id, name, age, gender, category)
 
@@ -236,14 +244,14 @@ def enter_gender(message, chat_id, name, age):
                                    reply_markup=buttons.gender())
             bot.register_next_step_handler(msg, enter_gender, chat_id, name, age)
         else:
-            msg = bot.send_message(chat_id=chat_id, text='Выбери для чего ты хочешь использовать бота',
+            msg = bot.send_message(chat_id=chat_id, text='Что ты ищешь?🤭',
                                    reply_markup=buttons.category())
             bot.register_next_step_handler(msg, enter_category, chat_id, name, age, gender)
 
 
 def enter_age(message, chat_id, name):
     if message.content_type != 'text':
-        msg = bot.send_message(chat_id=chat_id, text='Напишите сколько вам лет')
+        msg = bot.send_message(chat_id=chat_id, text='Напиши свой возраст.')
         bot.register_next_step_handler(msg, enter_age, chat_id, name)
     else:
         try:
@@ -254,13 +262,14 @@ def enter_age(message, chat_id, name):
             msg = bot.send_message(chat_id=chat_id, text='Введите число, которое больше 15 и меньше 100')
             bot.register_next_step_handler(msg, enter_age, chat_id, name)
         else:
-            msg = bot.send_message(chat_id=chat_id, text='Какой твой пол', reply_markup=buttons.gender())
+            msg = bot.send_message(chat_id=chat_id, text='Выбери пол.', reply_markup=buttons.gender())
             bot.register_next_step_handler(msg, enter_gender, chat_id, name, age)
 
 
 def enter_name(message, chat_id):
+    bot.clear_step_handler_by_chat_id(chat_id=chat_id)
     if message.content_type != 'text':
-        msg = bot.send_message(chat_id=chat_id, text='Напишите как вас зовут')
+        msg = bot.send_message(chat_id=chat_id, text='Укажи своё имя.')
         bot.register_next_step_handler(msg, enter_name, chat_id)
     else:
         name = message.text
@@ -269,5 +278,5 @@ def enter_name(message, chat_id):
             msg = bot.send_message(chat_id=chat_id, text='Максимальная длина имени 100 символов')
             bot.register_next_step_handler(msg, enter_name, chat_id)
         else:
-            msg = bot.send_message(chat_id=chat_id, text='Сколько вам лет?')
+            msg = bot.send_message(chat_id=chat_id, text='Напиши свой возраст.')
             bot.register_next_step_handler(msg, enter_age, chat_id, name)

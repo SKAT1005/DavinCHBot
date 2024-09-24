@@ -75,9 +75,9 @@ def edit_age(message, chat_id, user):
 
 
 def filter_menu(chat_id, user):
-    text = f'Какой возраст ищем: {user.find_age}\n' \
-           f'Какой пол ищем: {user.find_gender}\n' \
-           f'Для чего ищем: {user.category}\n'
+    text = f'Возрастная категория: {user.find_age}\n' \
+           f'Пол собеседника:  {user.find_gender}\n' \
+           f'Цель общения: {user.category}\n'
     bot.send_message(chat_id=chat_id, text=text, reply_markup=buttons.filter_menu())
 
 
@@ -87,14 +87,14 @@ def callback(data, chat_id, user):
     elif data[0] == 'age':
         msg = bot.send_message(chat_id=chat_id, text='Возрастная категория которая вас интересует:\n'
                                                      'От … До …\n'
-                                                     '(Запишите оба числа слитно в строку)🌞🌚\n'
+                                                     '(Запишите оба числа без пробелов)🌞🌚\n'
                                                      'Пример: 1825', reply_markup=buttons.go_back('filter'))
         bot.register_next_step_handler(msg, edit_age, chat_id, user)
     elif data[0] == 'gender':
-        msg = bot.send_message(chat_id=chat_id, text='Выбери какой пол ты ищешь',
+        msg = bot.send_message(chat_id=chat_id, text='Выбери пол собеседника😏',
                                reply_markup=buttons.find_gender())
         bot.register_next_step_handler(msg, edit_gender, chat_id, user)
     elif data[0] == 'category':
-        msg = bot.send_message(chat_id=chat_id, text='Выбери какие категории ты хочешь искать',
+        msg = bot.send_message(chat_id=chat_id, text='Выбери цель общения😊',
                                reply_markup=buttons.category())
         bot.register_next_step_handler(msg, edit_category, chat_id, user)

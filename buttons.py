@@ -2,7 +2,7 @@ from telebot import types
 
 
 def gender():
-    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True, row_width=1)
     male = types.KeyboardButton('мужской')
     female = types.KeyboardButton('женский')
     markup.add(male, female)
@@ -10,7 +10,7 @@ def gender():
 
 
 def category():
-    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True, row_width=1)
     category1 = types.KeyboardButton('Серьёзные отношения💞')
     category2 = types.KeyboardButton('Свободные отношения❤️‍🔥')
     category3 = types.KeyboardButton('Дружба🫡')
@@ -49,7 +49,7 @@ def find_age():
 
 
 def find_gender():
-    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True, row_width=1)
     male = types.KeyboardButton('мужской')
     female = types.KeyboardButton('женский')
     all = types.KeyboardButton('любой')
@@ -68,9 +68,9 @@ def check(id):
 def menu(user):
     markup = types.InlineKeyboardMarkup(row_width=1)
     watch = types.InlineKeyboardButton('Смотреть анкты', callback_data='profiles')
-    create = types.InlineKeyboardButton(f'Смотреть анкеты, которым я понравился ({user.like_users.all().count()})', callback_data='profiles|watch_like')
+    create = types.InlineKeyboardButton(f'Мэтчи ({user.like_users.all().count()})', callback_data='profiles|watch_like')
     edit_filter = types.InlineKeyboardButton('Настроить поиск', callback_data='filter')
-    verefi = types.InlineKeyboardButton('Верефикация анкеты', callback_data='edit_profile|verefi')
+    verefi = types.InlineKeyboardButton('Подтверждение анкеты', callback_data='edit_profile|verefi')
     edit_profile = types.InlineKeyboardButton('Настроить анкету', callback_data='edit_profile')
     markup.add(watch, create, edit_filter, verefi, edit_profile)
     return markup
@@ -78,11 +78,12 @@ def menu(user):
 
 def filter_menu():
     markup = types.InlineKeyboardMarkup(row_width=1)
-    edit_age = types.InlineKeyboardButton('Изменить возраст поиска', callback_data='filter|age')
-    edit_gender = types.InlineKeyboardButton('Изменить пол поиска', callback_data='filter|gender')
-    edit_category = types.InlineKeyboardButton('Изменить категорию поиска', callback_data='filter|category')
-    menu = types.InlineKeyboardButton('Вернуться назад', callback_data='menu')
-    markup.add(edit_age, edit_gender, edit_category, menu)
+    watch = types.InlineKeyboardButton('К анкетам 👀', callback_data='profiles')
+    edit_age = types.InlineKeyboardButton('Изменить возраст', callback_data='filter|age')
+    edit_gender = types.InlineKeyboardButton('Выбрать пол', callback_data='filter|gender')
+    edit_category = types.InlineKeyboardButton('Определить цель', callback_data='filter|category')
+    menu = types.InlineKeyboardButton('В меню ', callback_data='menu')
+    markup.add(edit_age, edit_gender, edit_category, menu, watch)
     return markup
 
 
@@ -149,25 +150,27 @@ def go_to_menu():
 
 def first_edit_photo():
     markup = types.InlineKeyboardMarkup(row_width=1)
-    first = types.InlineKeyboardButton('Фотография 1', callback_data='first_edit_photo|1')
-    second = types.InlineKeyboardButton('Фотография 2', callback_data='first_edit_photo|2')
-    therd = types.InlineKeyboardButton('Фотография 3', callback_data='first_edit_photo|3')
-    confirm = types.InlineKeyboardButton('Подтвердить и перейти в меню', callback_data='menu')
+    first = types.InlineKeyboardButton('Изменить фото/видео 1', callback_data='first_edit_photo|1')
+    second = types.InlineKeyboardButton('Изменить фото/видео 2', callback_data='first_edit_photo|2')
+    therd = types.InlineKeyboardButton('Изменить фото/видео 3', callback_data='first_edit_photo|3')
+    confirm = types.InlineKeyboardButton('Подтвердить', callback_data='menu')
     markup.add(first, second, therd, confirm)
     return markup
+
+
 def edit_photo():
     markup = types.InlineKeyboardMarkup(row_width=1)
-    first = types.InlineKeyboardButton('Фотография 1', callback_data='edit_profile|edit_photo|1')
-    second = types.InlineKeyboardButton('Фотография 2', callback_data='edit_profile|edit_photo|2')
-    therd = types.InlineKeyboardButton('Фотография 3', callback_data='edit_profile|edit_photo|3')
-    back = types.InlineKeyboardButton('Назад', callback_data='edit_profile')
+    first = types.InlineKeyboardButton('Редактировать фото/видео 1', callback_data='edit_profile|edit_photo|1')
+    second = types.InlineKeyboardButton('Редактировать фото/видео 2', callback_data='edit_profile|edit_photo|2')
+    therd = types.InlineKeyboardButton('Редактировать фото/видео 3', callback_data='edit_profile|edit_photo|3')
+    back = types.InlineKeyboardButton('Назад ⏪', callback_data='edit_profile')
     markup.add(first, second, therd, back)
     return markup
 
 
 def go_back(path):
     markup = types.InlineKeyboardMarkup(row_width=2)
-    back = types.InlineKeyboardButton('Назад', callback_data=path)
+    back = types.InlineKeyboardButton('Назад ⏪', callback_data=path)
     markup.add(back)
     return markup
 
@@ -189,7 +192,7 @@ def watch_like():
 
 def continue_watch():
     markup = types.InlineKeyboardMarkup(row_width=1)
-    watch = types.InlineKeyboardButton('Начать просмотр новых анкет', callback_data='profiles')
+    watch = types.InlineKeyboardButton('Смотреть анкеты', callback_data='profiles')
     menu = types.InlineKeyboardButton('В меню', callback_data='menu')
     markup.add(watch, menu)
     return markup

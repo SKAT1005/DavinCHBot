@@ -15,16 +15,14 @@ def add_media(medias, avatar_data):
     else:
         medias.append(types.InputMediaVideo(media=media_id))
     return medias
+
+
 def menu(chat_id, user):
     text = f'{user.status()} {user.name}, {user.age}, {user.city}, {user.category}\n\n' \
            f'О себе: {user.description}'
     medias = []
-    if user.avatar1:
-        medias = add_media(medias, user.avatar1)
-    if user.avatar2:
-        medias = add_media(medias, user.avatar2)
-    if user.avatar3:
-        medias = add_media(medias, user.avatar3)
+    for i in user.avatars.all()[:3]:
+        medias = add_media(medias, i.file_id)
     try:
         bot.send_media_group(chat_id=chat_id, media=medias)
     except Exception:

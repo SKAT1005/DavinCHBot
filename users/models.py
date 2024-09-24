@@ -5,18 +5,13 @@ from django.utils import timezone
 
 
 class User(models.Model):
-    chat_id = models.CharField(max_length=64, verbose_name='Id чата в телеге')
+    chat_id = models.CharField(max_length=64, blank=True, null=True, verbose_name='Id чата в телеге')
     name = models.CharField(max_length=128, blank=True, null=True, verbose_name='Имя')
     age = models.IntegerField(blank=True, null=True, verbose_name='Возраст')
     gender = models.CharField(max_length=16, blank=True, null=True, verbose_name='Гендер')
     category = models.CharField(max_length=32, blank=True, null=True, verbose_name='Для чего в боте')
-    avatar1 = models.CharField(blank=True, default='', max_length=256, null=True,
-                               verbose_name='Аватарка пользователя 1')
-    avatar2 = models.CharField(blank=True, default='', max_length=256, null=True,
-                               verbose_name='Аватарка пользователя 2')
-    avatar3 = models.CharField(blank=True, default='', max_length=256, null=True,
-                               verbose_name='Аватарка пользователя 3')
-    city = models.CharField(max_length=128, verbose_name='Город')
+    avatars = models.ManyToManyField('Photo', blank=True, null=True, verbose_name='Аватарки')
+    city = models.CharField(max_length=128, blank=True, null=True, verbose_name='Город')
     check_photo = models.ImageField(blank=True, upload_to='verefi', null=True, verbose_name='Фото для проверки')
     description = models.TextField(blank=True, null=True, verbose_name='Описание о себе')
     find_age = models.CharField(max_length=8, blank=True, null=True, verbose_name='Какой возраст предпочитает')
@@ -64,3 +59,7 @@ class Status(models.Model):
 class LikeUsers(models.Model):
     send_like = models.ForeignKey(User, related_name='send_like', on_delete=models.CASCADE)
     message_id = models.CharField(max_length=512, blank=True, null=True, verbose_name='ID сообщения')
+
+class Photo(models.Model):
+    file_id = models.CharField(blank=True, default='', max_length=256, null=True,
+                               verbose_name='Аватарка пользователя 1')

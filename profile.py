@@ -8,6 +8,7 @@ from telebot import types
 import buttons
 import coord
 from const import bot, simbols
+from users.models import Photo
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'DavinCHBot.settings')
 django.setup()
@@ -17,29 +18,40 @@ def edit_photo(message, chat_id, user, number):
     if message.content_type == 'photo':
         avatar_id = f'photo {message.photo[-1].file_id}'
         if number == '1':
-            user.avatar1 = avatar_id
-        elif number == '2':
-            user.avatar2 = avatar_id
+            avatar = user.avatars.all()[0]
+            avatar.file_id = avatar_id
+            avatar.save()
         else:
-            user.avatar3 = avatar_id
+            try:
+                avatar = user.avatars.all()[int(number) - 1]
+                avatar.file_id = avatar_id
+                avatar.save()
+            except Exception:
+                avatar = Photo.objects.create(file_id=avatar_id)
+                user.avatars.add(avatar)
         user.is_checked = False
-        user.save(update_fields=['avatar1', 'avatar2', 'avatar3'])
         photo(chat_id=chat_id, user=user)
     elif message.content_type == 'video':
         avatar_id = f'video {message.video.file_id}'
         if number == '1':
-            user.avatar1 = avatar_id
-        elif number == '2':
-            user.avatar2 = avatar_id
+            avatar = user.avatars.all()[0]
+            avatar.file_id = avatar_id
+            avatar.save()
         else:
-            user.avatar3 = avatar_id
+            try:
+                avatar = user.avatars.all()[int(number) - 1]
+                avatar.file_id = avatar_id
+                avatar.save()
+            except Exception:
+                avatar = Photo.objects.create(file_id=avatar_id)
+                user.avatars.add(avatar)
         user.is_checked = False
-        user.save(['avatar1', 'avatar2', 'avatar3'])
+        user.save()
         photo(chat_id=chat_id, user=user)
     else:
         msg = bot.send_message(chat_id=chat_id, text='Отправьте фотографию/видео',
                                reply_markup=buttons.go_back('edit_profile|photo'))
-        bot.register_next_step_handler(msg, edit_photo, chat_id, user)
+        bot.register_next_step_handler(msg, edit_photo, chat_id, user, number)
 
 
 def edit_city(message, chat_id, user):
@@ -123,12 +135,8 @@ def profile_menu(chat_id, user):
     text = f'{user.status()} {user.name}, {user.age}, {user.city}, {user.category}\n\n' \
            f'О себе: {user.description}'
     medias = []
-    if user.avatar1:
-        medias = add_media(medias, user.avatar1)
-    if user.avatar2:
-        medias = add_media(medias, user.avatar2)
-    if user.avatar3:
-        medias = add_media(medias, user.avatar3)
+    for i in user.avatars.all()[:3]:
+        medias = add_media(medias, i.file_id)
     try:
         bot.send_media_group(chat_id=chat_id, media=medias)
     except Exception:
@@ -147,12 +155,8 @@ def add_media(medias, avatar_data):
 
 def photo(chat_id, user):
     medias = []
-    if user.avatar1:
-        medias = add_media(medias, user.avatar1)
-    if user.avatar2:
-        medias = add_media(medias, user.avatar2)
-    if user.avatar3:
-        medias = add_media(medias, user.avatar3)
+    for i in user.avatars.all()[:3]:
+        medias = add_media(medias, i.file_id)
     bot.send_media_group(chat_id=chat_id, media=medias)
     bot.send_message(chat_id=chat_id, text='Выберите какую фотографию/видео хотите поменять',
                      reply_markup=buttons.edit_photo())

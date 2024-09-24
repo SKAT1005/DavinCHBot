@@ -22,7 +22,6 @@ django.setup()
 from users.models import User, Status
 
 
-
 @bot.message_handler(commands=['start'])
 def start(message):
     # КUser.objects.all().delete()
@@ -51,7 +50,9 @@ def answer_on_message(message):
     elif user.add_photo == 'step 2':
         pass
     else:
-        menu(chat_id, user)
+        msg = bot.send_message(chat_id=chat_id, text='Напишите как вас зовут', reply_markup=None)
+        bot.register_next_step_handler(msg, enter_name, chat_id)
+        # menu(chat_id, user)
 
 
 @bot.callback_query_handler(func=lambda call: True)

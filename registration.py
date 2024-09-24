@@ -12,12 +12,12 @@ from menu import menu
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'DavinCHBot.settings')
 django.setup()
-from users.models import User
+from users.models import User, Photo
 
 
 def create_account(chat_id, name, age, gender, category, description, find_age, find_gender, city, latitude,
                    longitude):
-    User.objects.create(
+    User.objects.get_or_create(
         chat_id=chat_id,
         name=name,
         age=age,
@@ -32,33 +32,47 @@ def create_account(chat_id, name, age, gender, category, description, find_age, 
     )
     bot.send_message(chat_id=chat_id, text='Отправьте нам до трех своих фотографий')
 
+
 def edit_photo(message, chat_id, user, number):
     if message.content_type == 'photo':
         avatar_id = f'photo {message.photo[-1].file_id}'
         if number == '1':
-            user.avatar1 = avatar_id
-        elif number == '2':
-            user.avatar2 = avatar_id
+            avatar = user.avatars.all()[0]
+            avatar.file_id = avatar_id
+            avatar.save()
         else:
-            user.avatar3 = avatar_id
+            try:
+                avatar = user.avatars.all()[int(number) - 1]
+                avatar.file_id = avatar_id
+                avatar.save()
+            except Exception:
+                avatar = Photo.objects.create(file_id=avatar_id)
+                user.avatars.add(avatar)
         user.is_checked = False
-        user.save(update_fields=['avatar1', 'avatar2', 'avatar3'])
         photo(chat_id=chat_id, user=user)
     elif message.content_type == 'video':
         avatar_id = f'video {message.video.file_id}'
         if number == '1':
-            user.avatar1 = avatar_id
-        elif number == '2':
-            user.avatar2 = avatar_id
+            avatar = user.avatars.all()[0]
+            avatar.file_id = avatar_id
+            avatar.save()
         else:
-            user.avatar3 = avatar_id
+            try:
+                avatar = user.avatars.all()[int(number) - 1]
+                avatar.file_id = avatar_id
+                avatar.save()
+            except Exception:
+                avatar = Photo.objects.create(file_id=avatar_id)
+                user.avatars.add(avatar)
         user.is_checked = False
-        user.save(['avatar1', 'avatar2', 'avatar3'])
+        user.save(['is_checked'])
         photo(chat_id=chat_id, user=user)
     else:
         msg = bot.send_message(chat_id=chat_id, text='Отправьте фотографию/видео',
                                reply_markup=buttons.go_back('edit_profile|photo'))
         bot.register_next_step_handler(msg, edit_photo, chat_id, user, number)
+
+
 def add_media(medias, avatar_data):
     type, media_id = avatar_data.split()
     if type == 'photo':
@@ -70,15 +84,12 @@ def add_media(medias, avatar_data):
 
 def photo(chat_id, user):
     medias = []
-    if user.avatar1:
-        medias = add_media(medias, user.avatar1)
-    if user.avatar2:
-        medias = add_media(medias, user.avatar2)
-    if user.avatar3:
-        medias = add_media(medias, user.avatar3)
+    for i in user.avatars.all()[:3]:
+        medias = add_media(medias, i.file_id)
     bot.send_media_group(chat_id=chat_id, media=medias)
     bot.send_message(chat_id=chat_id, text='Выберите какую фотографию/видео хотите поменять',
                      reply_markup=buttons.first_edit_photo())
+
 
 def add_photo(chat_id, message):
     content_type = message.content_type
@@ -87,40 +98,36 @@ def add_photo(chat_id, message):
             avatar_id = f'photo {message.photo[-1].file_id}'
         else:
             avatar_id = f'video {message.video.file_id}'
-        time.sleep(random.uniform(0.00001, 0.005))
+        # time.sleep(random.uniform(0.00001, 0.005))
         user = User.objects.get(chat_id=chat_id)
-        if not user.avatar1:
-            user.avatar1 += f'{avatar_id}'
-            user.save(update_fields=['avatar1'])
-            bot.send_message(chat_id=chat_id, text='Добавлена 1/3 фотографий. Отправьте еще или перейдите к просмотру, нажав кнопку под клавиатурой', reply_markup=buttons.watch_photo())
-        elif not user.avatar2:
-            user.avatar2 = avatar_id
-            user.save(update_fields=['avatar2'])
-            bot.send_message(chat_id=chat_id, text='Добавлена 2/3 фотографий. Отправьте еще или перейдите к просмотру, нажав кнопку под клавиатурой',
+        avatar_count = user.avatars.all().count()
+        if avatar_count < 2:
+            avatar = Photo.objects.create(file_id=f'{avatar_id}')
+            user.avatars.add(avatar)
+            bot.send_message(chat_id=chat_id,
+                             text=f'Ваша фотография добавлена. Отправьте еще или перейдите к просмотру, нажав кнопку под клавиатурой',
                              reply_markup=buttons.watch_photo())
-        elif not user.avatar3:
-            user.avatar3 = avatar_id
+        elif avatar_count == 2:
+            avatar = Photo.objects.create(file_id=f'{avatar_id}')
+            user.avatars.add(avatar)
             user.add_photo = 'step 2'
-            user.save(update_fields=['avatar3', 'add_photo'])
+            user.save(update_fields=['add_photo'])
             photo(chat_id=chat_id, user=user)
 
     else:
-        if user.avatar1 and content_type == 'text' and message.text == 'Смотреть мои фотографии':
+        user = User.objects.get(chat_id=chat_id)
+        count_avatars = user.avatars.all().count()
+        if count_avatars and content_type == 'text' and message.text == 'Смотреть мои фотографии':
             user.add_photo = 'step 2'
             user.save(update_fields=['add_photo'])
             photo(chat_id=chat_id, user=user)
         else:
-            if user.avatar2:
+            if count_avatars:
                 bot.send_message(chat_id=chat_id,
-                                 text='Добавлена 2/3 фотографий. Отправьте еще или перейдите к просмотру, нажав кнопку под клавиатурой',
-                                 reply_markup=buttons.watch_photo())
-            elif user.avatar1:
-                bot.send_message(chat_id=chat_id,
-                                 text='Добавлена 1/3 фотографий. Отправьте еще или перейдите к просмотру, нажав кнопку под клавиатурой',
+                                 text=f'Добавлена {count_avatars}/3 фотографий. Отправьте еще или перейдите к просмотру, нажав кнопку под клавиатурой',
                                  reply_markup=buttons.watch_photo())
             else:
                 bot.send_message(chat_id=chat_id, text='Отправьте нам до трех своих фотографий')
-
 
 
 def enter_city(message, chat_id, name, age, gender, category, description, find_age, find_gender):

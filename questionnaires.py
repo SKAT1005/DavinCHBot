@@ -85,13 +85,12 @@ def send_profile(chat_id, user, markup):
     text = f'{user.status()} {user.name}, {user.age}, {user.city}, {user.category}\n\n' \
            f'О себе: {user.description}'
     medias = []
-    if user.avatar1:
-        medias = add_media(medias, user.avatar1)
-    if user.avatar2:
-        medias = add_media(medias, user.avatar2)
-    if user.avatar3:
-        medias = add_media(medias, user.avatar3)
-    bot.send_media_group(chat_id=chat_id, media=medias)
+    for i in user.avatars.all()[:3]:
+        medias = add_media(medias, i.file_id)
+    try:
+        bot.send_media_group(chat_id=chat_id, media=medias)
+    except Exception:
+        pass
     bot.send_message(chat_id=chat_id, text=text, reply_markup=markup)
 
 

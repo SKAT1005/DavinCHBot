@@ -10,9 +10,12 @@ class User(models.Model):
     age = models.IntegerField(blank=True, null=True, verbose_name='Возраст')
     gender = models.CharField(max_length=16, blank=True, null=True, verbose_name='Гендер')
     category = models.CharField(max_length=32, blank=True, null=True, verbose_name='Для чего в боте')
-    avatar1 = models.CharField(blank=True, max_length=256, null=True, verbose_name='Аватарка пользователя')
-    avatar2 = models.CharField(blank=True, max_length=256, null=True, verbose_name='Аватарка пользователя')
-    avatar3 = models.CharField(blank=True, max_length=256, null=True, verbose_name='Аватарка пользователя')
+    avatar1 = models.CharField(blank=True, default='', max_length=256, null=True,
+                               verbose_name='Аватарка пользователя 1')
+    avatar2 = models.CharField(blank=True, default='', max_length=256, null=True,
+                               verbose_name='Аватарка пользователя 2')
+    avatar3 = models.CharField(blank=True, default='', max_length=256, null=True,
+                               verbose_name='Аватарка пользователя 3')
     city = models.CharField(max_length=128, verbose_name='Город')
     check_photo = models.ImageField(blank=True, upload_to='verefi', null=True, verbose_name='Фото для проверки')
     description = models.TextField(blank=True, null=True, verbose_name='Описание о себе')
@@ -28,6 +31,7 @@ class User(models.Model):
     is_checked = models.BooleanField(default=False, verbose_name='Проеверен ли аккаунт')
     is_admin = models.BooleanField(default=False, verbose_name='Является ли пользователь админом')
     is_ban = models.BooleanField(default=False, verbose_name='В бане ли аккаунт')
+    add_photo = models.CharField(max_length=16, default='step 1', verbose_name='Добавляют ли фото')
 
     def update_last_active(self):
         self.last_active = timezone.now()

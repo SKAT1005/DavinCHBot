@@ -23,7 +23,7 @@ def edit_photo(message, chat_id, user, number):
         else:
             user.avatar3 = avatar_id
         user.is_checked = False
-        user.save()
+        user.save(update_fields=['avatar1', 'avatar2', 'avatar3'])
         photo(chat_id=chat_id, user=user)
     elif message.content_type == 'video':
         avatar_id = f'video {message.video.file_id}'
@@ -34,7 +34,7 @@ def edit_photo(message, chat_id, user, number):
         else:
             user.avatar3 = avatar_id
         user.is_checked = False
-        user.save()
+        user.save(['avatar1', 'avatar2', 'avatar3'])
         photo(chat_id=chat_id, user=user)
     else:
         msg = bot.send_message(chat_id=chat_id, text='Отправьте фотографию/видео',
@@ -106,10 +106,10 @@ def edit_age(message, chat_id, user):
     else:
         try:
             age = int(message.text)
-            if age < 16:
+            if age < 16 or age > 99:
                 raise Exception
         except Exception:
-            msg = bot.send_message(chat_id=chat_id, text='Введите число, которое больше 16',
+            msg = bot.send_message(chat_id=chat_id, text='Введите число, которое больше 15 и меньше 100',
                                    reply_markup=buttons.go_back('edit_profile'))
             bot.register_next_step_handler(msg, edit_age, chat_id, user)
         else:
@@ -129,7 +129,10 @@ def profile_menu(chat_id, user):
         medias = add_media(medias, user.avatar2)
     if user.avatar3:
         medias = add_media(medias, user.avatar3)
-    bot.send_media_group(chat_id=chat_id, media=medias)
+    try:
+        bot.send_media_group(chat_id=chat_id, media=medias)
+    except Exception:
+        pass
     bot.send_message(chat_id=chat_id, text=text, reply_markup=buttons.profile_menu())
 
 

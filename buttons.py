@@ -32,6 +32,11 @@ def skip():
     markup.add(skip)
     return markup
 
+def watch_photo():
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
+    skip = types.KeyboardButton('Смотреть мои фотографии')
+    markup.add(skip)
+    return markup
 
 def find_age():
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
@@ -60,10 +65,10 @@ def check(id):
     return markup
 
 
-def menu():
+def menu(user):
     markup = types.InlineKeyboardMarkup(row_width=1)
     watch = types.InlineKeyboardButton('Смотреть анкты', callback_data='profiles')
-    create = types.InlineKeyboardButton('Смотреть анкеты, которым я понравился', callback_data='profiles|watch_like')
+    create = types.InlineKeyboardButton(f'Смотреть анкеты, которым я понравился ({user.like_users.all().count()})', callback_data='profiles|watch_like')
     edit_filter = types.InlineKeyboardButton('Настроить поиск', callback_data='filter')
     verefi = types.InlineKeyboardButton('Верефикация анкеты', callback_data='edit_profile|verefi')
     edit_profile = types.InlineKeyboardButton('Настроить анкету', callback_data='edit_profile')
@@ -111,7 +116,8 @@ def questionnaire_menu(user_id):
 def watch_questionnaire():
     markup = types.InlineKeyboardMarkup(row_width=1)
     watch = types.InlineKeyboardButton('Продолжить смотреть анкты', callback_data='profiles')
-    markup.add(watch)
+    menu = types.InlineKeyboardButton('В меню', callback_data='menu')
+    markup.add(watch, menu)
     return markup
 
 
@@ -120,14 +126,17 @@ def answer_on_like(user_id):
     like = types.InlineKeyboardButton('💗', callback_data=f'profiles|answer_like|{user_id}')
     dislike = types.InlineKeyboardButton('🚫', callback_data=f'profiles|answer_dislike|{user_id}')
     report = types.InlineKeyboardButton('Пожаловаться', callback_data=f'profiles|report|{user_id}')
+    menu = types.InlineKeyboardButton('В меню', callback_data='menu')
     markup.add(like, dislike, report)
+    markup.add(menu)
     return markup
 
 
 def send_link_on_chat(user_id):
-    markup = types.InlineKeyboardMarkup(row_width=2)
+    markup = types.InlineKeyboardMarkup(row_width=1)
     link = types.InlineKeyboardButton('Профиль пользователя', url=f'tg://user?id={user_id}')
-    markup.add(link)
+    menu = types.InlineKeyboardButton('В меню', callback_data='menu')
+    markup.add(link, menu)
     return markup
 
 
@@ -138,6 +147,14 @@ def go_to_menu():
     return markup
 
 
+def first_edit_photo():
+    markup = types.InlineKeyboardMarkup(row_width=1)
+    first = types.InlineKeyboardButton('Фотография 1', callback_data='first_edit_photo|1')
+    second = types.InlineKeyboardButton('Фотография 2', callback_data='first_edit_photo|2')
+    therd = types.InlineKeyboardButton('Фотография 3', callback_data='first_edit_photo|3')
+    confirm = types.InlineKeyboardButton('Подтвердить и перейти в меню', callback_data='menu')
+    markup.add(first, second, therd, confirm)
+    return markup
 def edit_photo():
     markup = types.InlineKeyboardMarkup(row_width=1)
     first = types.InlineKeyboardButton('Фотография 1', callback_data='edit_profile|edit_photo|1')

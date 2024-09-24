@@ -29,4 +29,4 @@ def menu(chat_id, user):
         bot.send_media_group(chat_id=chat_id, media=medias)
     except Exception:
         print(chat_id)
-    bot.send_message(chat_id=chat_id, text=text, reply_markup=buttons.menu())
+    bot.send_message(chat_id=chat_id, text=text, reply_markup=buttons.menu(user=user))

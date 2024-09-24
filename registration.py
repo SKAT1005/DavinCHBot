@@ -1,7 +1,9 @@
 import os
 import random
+import time
 
 import django
+from telebot import types
 
 import buttons
 import coord
@@ -13,15 +15,12 @@ django.setup()
 from users.models import User
 
 
-def create_account(chat_id, name, age, gender, category, description, find_age, find_gender, avatar_id, city, latitude,
+def create_account(chat_id, name, age, gender, category, description, find_age, find_gender, city, latitude,
                    longitude):
-    user = User.objects.create(
+    User.objects.create(
         chat_id=chat_id,
         name=name,
         age=age,
-        avatar1=avatar_id[0],
-        avatar2=avatar_id[1],
-        avatar3=avatar_id[2],
         city=city,
         gender=gender,
         category=category,
@@ -31,10 +30,100 @@ def create_account(chat_id, name, age, gender, category, description, find_age, 
         longitude=longitude,
         latitude=latitude,
     )
-    menu(chat_id=chat_id, user = user)
+    bot.send_message(chat_id=chat_id, text='Отправьте нам до трех своих фотографий')
+
+def edit_photo(message, chat_id, user, number):
+    if message.content_type == 'photo':
+        avatar_id = f'photo {message.photo[-1].file_id}'
+        if number == '1':
+            user.avatar1 = avatar_id
+        elif number == '2':
+            user.avatar2 = avatar_id
+        else:
+            user.avatar3 = avatar_id
+        user.is_checked = False
+        user.save(update_fields=['avatar1', 'avatar2', 'avatar3'])
+        photo(chat_id=chat_id, user=user)
+    elif message.content_type == 'video':
+        avatar_id = f'video {message.video.file_id}'
+        if number == '1':
+            user.avatar1 = avatar_id
+        elif number == '2':
+            user.avatar2 = avatar_id
+        else:
+            user.avatar3 = avatar_id
+        user.is_checked = False
+        user.save(['avatar1', 'avatar2', 'avatar3'])
+        photo(chat_id=chat_id, user=user)
+    else:
+        msg = bot.send_message(chat_id=chat_id, text='Отправьте фотографию/видео',
+                               reply_markup=buttons.go_back('edit_profile|photo'))
+        bot.register_next_step_handler(msg, edit_photo, chat_id, user, number)
+def add_media(medias, avatar_data):
+    type, media_id = avatar_data.split()
+    if type == 'photo':
+        medias.append(types.InputMediaPhoto(media=media_id))
+    else:
+        medias.append(types.InputMediaVideo(media=media_id))
+    return medias
 
 
-def enter_city(message, chat_id, name, age, gender, category, description, find_age, find_gender, avatar_id):
+def photo(chat_id, user):
+    medias = []
+    if user.avatar1:
+        medias = add_media(medias, user.avatar1)
+    if user.avatar2:
+        medias = add_media(medias, user.avatar2)
+    if user.avatar3:
+        medias = add_media(medias, user.avatar3)
+    bot.send_media_group(chat_id=chat_id, media=medias)
+    bot.send_message(chat_id=chat_id, text='Выберите какую фотографию/видео хотите поменять',
+                     reply_markup=buttons.first_edit_photo())
+
+def add_photo(chat_id, message):
+    content_type = message.content_type
+    if content_type in ['photo', 'video']:
+        if content_type == 'photo':
+            avatar_id = f'photo {message.photo[-1].file_id}'
+        else:
+            avatar_id = f'video {message.video.file_id}'
+        time.sleep(random.uniform(0.00001, 0.005))
+        user = User.objects.get(chat_id=chat_id)
+        if not user.avatar1:
+            user.avatar1 += f'{avatar_id}'
+            user.save(update_fields=['avatar1'])
+            bot.send_message(chat_id=chat_id, text='Добавлена 1/3 фотографий. Отправьте еще или перейдите к просмотру, нажав кнопку под клавиатурой', reply_markup=buttons.watch_photo())
+        elif not user.avatar2:
+            user.avatar2 = avatar_id
+            user.save(update_fields=['avatar2'])
+            bot.send_message(chat_id=chat_id, text='Добавлена 2/3 фотографий. Отправьте еще или перейдите к просмотру, нажав кнопку под клавиатурой',
+                             reply_markup=buttons.watch_photo())
+        elif not user.avatar3:
+            user.avatar3 = avatar_id
+            user.add_photo = 'step 2'
+            user.save(update_fields=['avatar3', 'add_photo'])
+            photo(chat_id=chat_id, user=user)
+
+    else:
+        if user.avatar1 and content_type == 'text' and message.text == 'Смотреть мои фотографии':
+            user.add_photo = 'step 2'
+            user.save(update_fields=['add_photo'])
+            photo(chat_id=chat_id, user=user)
+        else:
+            if user.avatar2:
+                bot.send_message(chat_id=chat_id,
+                                 text='Добавлена 2/3 фотографий. Отправьте еще или перейдите к просмотру, нажав кнопку под клавиатурой',
+                                 reply_markup=buttons.watch_photo())
+            elif user.avatar1:
+                bot.send_message(chat_id=chat_id,
+                                 text='Добавлена 1/3 фотографий. Отправьте еще или перейдите к просмотру, нажав кнопку под клавиатурой',
+                                 reply_markup=buttons.watch_photo())
+            else:
+                bot.send_message(chat_id=chat_id, text='Отправьте нам до трех своих фотографий')
+
+
+
+def enter_city(message, chat_id, name, age, gender, category, description, find_age, find_gender):
     if message.content_type == 'text':
         city_name = message.text.lower()
         city, latitude, longitude = coord.get_coord_by_name(city_name)
@@ -42,9 +131,9 @@ def enter_city(message, chat_id, name, age, gender, category, description, find_
             msg = bot.send_message(chat_id=chat_id, text='Введите верное название города',
                                    reply_markup=buttons.send_locaton())
             bot.register_next_step_handler(msg, enter_city, chat_id, name, age, gender, category, description, find_age,
-                                           find_gender, avatar_id)
+                                           find_gender)
         else:
-            create_account(chat_id, name, age, gender, category, description, find_age, find_gender, avatar_id, city,
+            create_account(chat_id, name, age, gender, category, description, find_age, find_gender, city,
                            latitude, longitude)
     elif message.content_type == 'location':
         latitude = float(message.location.latitude)
@@ -54,55 +143,15 @@ def enter_city(message, chat_id, name, age, gender, category, description, find_
             msg = bot.send_message(chat_id=chat_id, text='Отправьте верные координаты',
                                    reply_markup=buttons.send_locaton())
             bot.register_next_step_handler(msg, enter_city, chat_id, name, age, gender, category, description, find_age,
-                                           find_gender, avatar_id)
+                                           find_gender)
         else:
-            create_account(chat_id, name, age, gender, category, description, find_age, find_gender, avatar_id, city,
+            create_account(chat_id, name, age, gender, category, description, find_age, find_gender, city,
                            latitude, longitude)
     else:
         msg = bot.send_message(chat_id=chat_id,
                                text='Введите название вашего города или отправьте координаты, нажав кнопку под клавиатурой',
                                reply_markup=buttons.send_locaton())
         bot.register_next_step_handler(msg, enter_city, chat_id, name, age, gender, category, description, find_age,
-                                       find_gender, avatar_id)
-
-
-def enter_photo(message, chat_id, name, age, gender, category, description, find_age, find_gender, avatar_id=[None, None, None], n=0):
-    if message.content_type == 'photo' and n!=3:
-        avatar_id[n] = f'photo {message.photo[-1].file_id}'
-        if n == 2:
-            msg = bot.send_message(chat_id=chat_id,
-                                   text='Введите название вашего города или отправьте координаты, нажав кнопку под клавиатурой',
-                                   reply_markup=buttons.send_locaton())
-            bot.register_next_step_handler(msg, enter_city, chat_id, name, age, gender, category, description, find_age,
-                                           find_gender, avatar_id)
-        else:
-            msg = bot.send_message(chat_id=chat_id, text='Отправьте еще фотогравию/видео. Если хотите пропустить, нажмите кнопку Пропустить', reply_markup=buttons.skip())
-            bot.register_next_step_handler(msg, enter_photo, chat_id, name, age, gender, category, description,
-                                           find_age,
-                                           find_gender, avatar_id, n+1)
-    elif message.content_type == 'video':
-        avatar_id[n] = f'video {message.video.file_id}'
-        if n == 2:
-            msg = bot.send_message(chat_id=chat_id,
-                                   text='Введите название вашего города или отправьте координаты, нажав кнопку под клавиатурой',
-                                   reply_markup=buttons.send_locaton())
-            bot.register_next_step_handler(msg, enter_city, chat_id, name, age, gender, category, description, find_age,
-                                           find_gender, avatar_id)
-        else:
-            msg = bot.send_message(chat_id=chat_id,
-                                   text='Отправьте еще фотогравию/видео. Если хотите пропустить, нажмите кнопку Пропустить', reply_markup=buttons.skip())
-            bot.register_next_step_handler(msg, enter_photo, chat_id, name, age, gender, category, description,
-                                           find_age,
-                                           find_gender, avatar_id, n + 1)
-    elif message.content_type == 'text' and message.text == 'Пропустить':
-        msg = bot.send_message(chat_id=chat_id,
-                               text='Введите название вашего города или отправьте координаты, нажав кнопку под клавиатурой',
-                               reply_markup=buttons.send_locaton())
-        bot.register_next_step_handler(msg, enter_city, chat_id, name, age, gender, category, description, find_age,
-                                       find_gender, avatar_id)
-    else:
-        msg = bot.send_message(chat_id=chat_id, text='Отправьте фотографию/видео')
-        bot.register_next_step_handler(msg, enter_photo, chat_id, name, age, gender, category, description, find_age,
                                        find_gender)
 
 
@@ -121,10 +170,10 @@ def enter_find_gender(message, chat_id, name, age, gender, category, description
                                            find_age)
         else:
             msg = bot.send_message(chat_id=chat_id,
-                                   text='Отправь свою фотографию/видео, которую будут видеть пользователи',
-                                   reply_markup=None)
-            bot.register_next_step_handler(msg, enter_photo, chat_id, name, age, gender, category, description,
-                                           find_age, find_gender)
+                                   text='Введите название вашего города или отправьте координаты, нажав кнопку под клавиатурой',
+                                   reply_markup=buttons.send_locaton())
+            bot.register_next_step_handler(msg, enter_city, chat_id, name, age, gender, category, description, find_age,
+                                           find_gender)
 
 
 def get_find_age(age):

@@ -103,19 +103,24 @@ def send_message_to_questionnaire(questionnaire):
 
 
 def like(chat_id, user, questionnaire_chat_id):
-    questionnaire = User.objects.get(chat_id=questionnaire_chat_id)
-    like_user = LikeUsers.objects.create(send_like=user)
-    questionnaire.like_users.add(like_user)
-    send_message_to_questionnaire(questionnaire=questionnaire)
+    try:
+        questionnaire = User.objects.get(chat_id=questionnaire_chat_id)
+        like_user = LikeUsers.objects.create(send_like=user)
+        questionnaire.like_users.add(like_user)
+        send_message_to_questionnaire(questionnaire=questionnaire)
+    except Exception:
+        pass
     send_questionnaires(chat_id=chat_id, user=user)
 
 
 def send_message_or_video(message, chat_id, user, questionnaire_chat_id):
-    questionnaire = User.objects.get(chat_id=questionnaire_chat_id)
-    like_user = LikeUsers.objects.create(send_like=user, message_id=message.id)
-    questionnaire.like_users.add(like_user)
-    questionnaire.save(update_fields='like_users')
-    send_message_to_questionnaire(questionnaire=questionnaire)
+    try:
+        questionnaire = User.objects.get(chat_id=questionnaire_chat_id)
+        like_user = LikeUsers.objects.create(send_like=user, message_id=message.id)
+        questionnaire.like_users.add(like_user)
+        send_message_to_questionnaire(questionnaire=questionnaire)
+    except Exception:
+        pass
     send_questionnaires(chat_id=chat_id, user=user)
 
 
@@ -157,12 +162,15 @@ def report(message, chat_id):
 
 
 def add_action(type, user, questionnaire_chat_id):
-    to_user = User.objects.get(chat_id=questionnaire_chat_id)
-    Status.objects.create(
-        form_user=user,
-        to_user=to_user,
-        type=type
-    )
+    try:
+        to_user = User.objects.get(chat_id=questionnaire_chat_id)
+        Status.objects.create(
+            form_user=user,
+            to_user=to_user,
+            type=type
+        )
+    except Exception:
+        pass
 
 
 def add_answer(user_id, to_user):

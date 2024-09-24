@@ -4,6 +4,7 @@ import threading
 import time
 
 import django
+import telebot
 from django.utils import timezone
 from telebot import types
 
@@ -11,6 +12,7 @@ import buttons
 import filter
 import profile
 import questionnaires
+import registration
 from const import bot
 from menu import menu
 from registration import enter_name
@@ -21,17 +23,33 @@ from users.models import User, Status
 
 
 
-
-
 @bot.message_handler(commands=['start'])
 def start(message):
-    # User.objects.all().delete()
+    # КUser.objects.all().delete()
     chat_id = message.chat.id
-    print(chat_id)
     user = User.objects.filter(chat_id=chat_id).first()
     if not user:
         msg = bot.send_message(chat_id=chat_id, text='Напишите как вас зовут', reply_markup=None)
         bot.register_next_step_handler(msg, enter_name, chat_id)
+    elif user.add_photo == 'step 1':
+        registration.add_photo(chat_id=chat_id, message=message)
+    elif user.add_photo == 'step 2':
+        pass
+    else:
+        menu(chat_id, user)
+
+
+@bot.message_handler(content_types=telebot.util.content_type_media)
+def answer_on_message(message):
+    chat_id = message.chat.id
+    user = User.objects.filter(chat_id=chat_id).first()
+    if not user:
+        msg = bot.send_message(chat_id=chat_id, text='Напишите как вас зовут', reply_markup=None)
+        bot.register_next_step_handler(msg, enter_name, chat_id)
+    elif user.add_photo == 'step 1':
+        registration.add_photo(chat_id=chat_id, message=message)
+    elif user.add_photo == 'step 2':
+        pass
     else:
         menu(chat_id, user)
 
@@ -42,6 +60,10 @@ def callback(call):
     chat_id = call.message.chat.id
     user = User.objects.filter(chat_id=call.from_user.id)
     if not user:
+        try:
+            bot.delete_message(chat_id=chat_id, message_id=message_id)
+        except Exception:
+            pass
         msg = bot.send_message(chat_id=chat_id, text='Напишите как вас зовут', reply_markup=None)
         bot.register_next_step_handler(msg, enter_name, chat_id)
     else:
@@ -50,7 +72,7 @@ def callback(call):
         if call.message:
             data = call.data.split('|')
             bot.clear_step_handler_by_chat_id(chat_id=chat_id)
-            for i in range(message_id - 3, message_id + 1):
+            for i in range(message_id - 4, message_id + 1):
                 try:
                     bot.delete_message(chat_id=chat_id, message_id=i)
                 except Exception:
@@ -67,6 +89,8 @@ def callback(call):
                 usr = User.objects.get(chat_id=data[1])
                 bot.send_message(chat_id=usr.chat_id, text='Ваша анкета не одобрена', reply_markup=None)
             elif data[0] == 'menu':
+                user.add_photo = 'step 3'
+                user.save(update_fields=['add_photo'])
                 menu(chat_id=chat_id, user=user)
             elif data[0] == 'filter':
                 filter.callback(data=data[1:], user=user, chat_id=chat_id)
@@ -77,6 +101,10 @@ def callback(call):
                     user.active = True
                     user.save(update_fields=['active'])
                 questionnaires.callback(data=data[1:], user=user, chat_id=chat_id)
+            elif data[0] == 'first_edit_photo':
+                msg = bot.send_message(chat_id=chat_id, text='Отправьте фотографию/видео',
+                                       reply_markup=buttons.go_back('edit_profile|photo'))
+                bot.register_next_step_handler(msg, registration.edit_photo, chat_id, user, data[1])
 
 
 def status():

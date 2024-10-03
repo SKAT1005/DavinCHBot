@@ -1,7 +1,9 @@
+import base64
 import datetime
 
 from django.db import models
 from django.utils import timezone
+from const import bot
 
 
 class User(models.Model):
@@ -40,6 +42,16 @@ class User(models.Model):
         if self.is_checked:
             return '✅'
         return ''
+    def check_verefi(self):
+        if self.is_checked:
+            return 'Верефицирован'
+        return 'Не верефицирован'
+
+    def check_ban(self):
+        if self.is_ban:
+            return 'Забанен'
+        else:
+            return 'Не забанен'
 
 
 class Image(models.Model):
@@ -63,3 +75,18 @@ class LikeUsers(models.Model):
 class Photo(models.Model):
     file_id = models.CharField(blank=True, default='', max_length=256, null=True,
                                verbose_name='Аватарка пользователя 1')
+    base64_file = models.TextField(blank=True, null=True, verbose_name='Файл в формате base64')
+
+    def get_data(self):
+        if not self.base64_file:
+            type, file_id = self.file_id.split()
+            file_info = bot.get_file(file_id)
+            downloaded_file = bot.download_file(file_info.file_path)
+            encoded_string = base64.b64encode(downloaded_file).decode('utf-8')
+            self.base64_file = encoded_string
+            self.save(update_fields=['base64_file'])
+        return self.base64_file
+
+    def get_type(self):
+        return self.file_id.split()[0]
+

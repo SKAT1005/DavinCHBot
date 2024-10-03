@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Список пользователей</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            display: flex;
+        }
+
+        .sidebar {
+            width: 200px;
+            background-color: #f0f0f0;
+            padding: 20px;
+        }
+
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .sidebar li {
+            margin-bottom: 10px;
+        }
+
+        .sidebar a {
+            display: block;
+            padding: 10px;
+            text-decoration: none;
+            color: #333;
+            border-radius: 5px;
+            background-color: #fff;
+            transition: background-color 0.3s ease;
+        }
+
+        .sidebar a:hover {
+            background-color: #ddd;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .sorting {
+            display: flex;
+        }
+
+        .sorting button {
+            margin-right: 10px;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            background-color: #fff;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .sorting button:hover {
+            background-color: #ddd;
+        }
+
+        .filters {
+            display: flex;
+        }
+
+        .filters select {
+            margin-right: 10px;
+            padding: 8px;
+            border: none;
+            border-radius: 5px;
+            background-color: #fff;
+        }
+
+        .user-list {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+
+        .user-card {
+            width: 250px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 5px;
+        }
+
+        .user-card .user-images {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .user-card .user-images img, .user-card .user-images video {
+            width: 50px;
+            height: 50px;
+            object-fit: cover;
+            border-radius: 5px;
+        }
+
+        .user-card .user-info {
+            margin-top: 10px;
+        }
+
+        .user-card .user-info p {
+            margin: 5px 0;
+        }
+
+        .user-card .user-actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
+
+        .user-card button {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            background-color: #fff;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .user-card button:hover {
+            background-color: #ddd;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="sidebar">
+        <ul>
+            <li><a href="#">Список пользователей</a></li>
+            <li><a href="#">Верефикация пользователей</a></li>
+            <li><a href="#">Управление рекламой</a></li>
+            <li><a href="#">Статистика</a></li>
+            <li><a href="#">Главная админ-панель</a></li>
+        </ul>
+    </div>
+
+    <div class="main-content">
+
+        <div class="user-list">
+            <div class="user-card">
+                <div class="user-images">
+                    <img src="https://via.placeholder.com/50" alt="Фото 1">
+                    <img src="https://via.placeholder.com/50" alt="Фото 2">
+                    <video src="https://via.placeholder.com/50" controls></video>
+                </div>
+                <div class="user-info">
+                    <p>Имя пользователя</p>
+                    <p>25 лет, Москва</p>
+                    <p>Категория: Музыка</p>
+                    <p>Описание: ...</p>
+                    <p>Статус: Не забанен</p>
+                    <p>Текст жалобы: Текст жалобы</p>
+                </div>
+                <div class="user-actions">
+                    <button>Забанить</button>
+                    <button>Удалить анкету</button>
+                    <button>Отказать</button>
+                </div>
+            </div>
+            <div class="user-card">
+                <div class="user-images">
+                    <img src="https://via.placeholder.com/50" alt="Фото 1">
+                    <img src="https://via.placeholder.com/50" alt="Фото 2">
+                    <video src="https://via.placeholder.com/50" controls></video>
+                </div>
+                <div class="user-info">
+                    <p>Имя пользователя</p>
+                    <p>25 лет, Москва</p>
+                    <p>Категория: Музыка</p>
+                    <p>Описание: ...</p>
+                    <p>Статус: Не забанен</p>
+                    <p>Текст жалобы: Текст жалобы</p>
+                </div>
+                <div class="user-actions">
+                    <button>Забанить</button>
+                    <button>Удалить анкету</button>
+                    <button>Отказать</button>
+                </div>
+            </div>
+            <div class="user-card">
+                <div class="user-images">
+                    <img src="https://via.placeholder.com/50" alt="Фото 1">
+                    <img src="https://via.placeholder.com/50" alt="Фото 2">
+                    <video src="https://via.placeholder.com/50" controls></video>
+                </div>
+                <div class="user-info">
+                    <p>Имя пользователя</p>
+                    <p>25 лет, Москва</p>
+                    <p>Категория: Музыка</p>
+                    <p>Описание: ...</p>
+                    <p>Статус: Не забанен</p>
+                    <p>Текст жалобы: Текст жалобы</p>
+                </div>
+                <div class="user-actions">
+                    <button>Забанить</button>
+                    <button>Удалить анкету</button>
+                    <button>Отказать</button>
+                </div>
+            </div>
+            <div class="user-card">
+                <div class="user-images">
+                    <img src="https://via.placeholder.com/50" alt="Фото 1">
+                    <img src="https://via.placeholder.com/50" alt="Фото 2">
+                    <video src="https://via.placeholder.com/50" controls></video>
+                </div>
+                <div class="user-info">
+                    <p>Имя пользователя</p>
+                    <p>25 лет, Москва</p>
+                    <p>Категория: Музыка</p>
+                    <p>Описание: ...</p>
+                    <p>Статус: Не забанен</p>
+                    <p>Текст жалобы: Текст жалобы</p>
+                </div>
+                <div class="user-actions">
+                    <button>Забанить</button>
+                    <button>Удалить анкету</button>
+                    <button>Отказать</button>
+                </div>
+            </div>
+            <div class="user-card">
+                <div class="user-images">
+                    <img src="https://via.placeholder.com/50" alt="Фото 1">
+                    <img src="https://via.placeholder.com/50" alt="Фото 2">
+                    <video src="https://via.placeholder.com/50" controls></video>
+                </div>
+                <div class="user-info">
+                    <p>Имя пользователя</p>
+                    <p>25 лет, Москва</p>
+                    <p>Категория: Музыка</p>
+                    <p>Описание: ...</p>
+                    <p>Статус: Не забанен</p>
+                    <p>Текст жалобы: Текст жалобы</p>
+                </div>
+                <div class="user-actions">
+                    <button>Забанить</button>
+                    <button>Удалить анкету</button>
+                    <button>Отказать</button>
+                </div>
+            </div>
+            <div class="user-card">
+                <div class="user-images">
+                    <img src="https://via.placeholder.com/50" alt="Фото 1">
+                    <img src="https://via.placeholder.com/50" alt="Фото 2">
+                    <video src="https://via.placeholder.com/50" controls></video>
+                </div>
+                <div class="user-info">
+                    <p>Имя пользователя</p>
+                    <p>25 лет, Москва</p>
+                    <p>Категория: Музыка</p>
+                    <p>Описание: ...</p>
+                    <p>Статус: Не забанен</p>
+                    <p>Текст жалобы: Текст жалобы</p>
+                </div>
+                <div class="user-actions">
+                    <button>Забанить</button>
+                    <button>Удалить анкету</button>
+                    <button>Отказать</button>
+                </div>
+            </div>
+            <div class="user-card">
+                <div class="user-images">
+                    <img src="https://via.placeholder.com/50" alt="Фото 1">
+                    <img src="https://via.placeholder.com/50" alt="Фото 2">
+                    <video src="https://via.placeholder.com/50" controls></video>
+                </div>
+                <div class="user-info">
+                    <p>Имя пользователя</p>
+                    <p>25 лет, Москва</p>
+                    <p>Категория: Музыка</p>
+                    <p>Описание: ...</p>
+                    <p>Статус: Не забанен</p>
+                    <p>Текст жалобы: Текст жалобы</p>
+                </div>
+                <div class="user-actions">
+                    <button>Забанить</button>
+                    <button>Удалить анкету</button>
+                    <button>Отказать</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

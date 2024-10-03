@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Создание рекламы</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            display: flex;
+        }
+
+        .sidebar {
+            width: 200px;
+            background-color: #f0f0f0;
+            padding: 20px;
+        }
+
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .sidebar li {
+            margin-bottom: 10px;
+        }
+
+        .sidebar a {
+            display: block;
+            padding: 10px;
+            text-decoration: none;
+            color: #333;
+            border-radius: 5px;
+            background-color: #fff;
+            transition: background-color 0.3s ease;
+        }
+
+        .sidebar a:hover {
+            background-color: #ddd;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 20px;
+        }
+
+        .form-container {
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+
+        .form-button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .form-button:hover {
+            background-color: #45a049;
+        }
+
+        /* Специальные стили для изображения */
+        .form-input[type="file"] {
+            display: none;
+        }
+
+        .upload-button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background-color: #f0f0f0;
+            color: #333;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .upload-button:hover {
+            background-color: #ddd;
+        }
+
+        .preview-image {
+            width: 200px;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <ul>
+                <li><a href="#">Список пользователей</a></li>
+                <li><a href="#">Жалобы</a></li>
+                <li><a href="#">Верефикация пользователей</a></li>
+                <li><a href="#">Управление рекламой</a></li>
+                <li><a href="#">Статистика</a></li>
+                <li><a href="#">Главная админ-панель</a></li>
+            </ul>
+        </div>
+
+        <div class="main-content">
+            <div class="form-container">
+                <h2>Создание рекламы</h2>
+                <form>
+                    <label for="image" class="form-label">Фотография:</label>
+                    <input type="file" id="image" accept="image/*" class="form-input">
+                    <button type="button" class="upload-button">Загрузить</button>
+                    <img src="#" alt="Предпросмотр изображения" class="preview-image">
+
+                    <label for="text" class="form-label">Текст рекламы:</label>
+                    <textarea id="text" class="form-input" rows="5"></textarea>
+
+                    <button type="submit" class="form-button">Создать рекламу</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const uploadButton = document.querySelector('.upload-button');
+        const imageInput = document.getElementById('image');
+        const previewImage = document.querySelector('.preview-image');
+
+        uploadButton.addEventListener('click', () => {
+            imageInput.click();
+        });
+
+        imageInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            const reader = new FileReader();
+
+            reader.onload = (e) => {
+                previewImage.src = e.target.result;
+            };
+
+            if (file) {
+                reader.readAsDataURL(file);
+            } else {
+                previewImage.src = "#";
+            }
+        });
+    </script>
+</body>
+</html>

@@ -9,12 +9,13 @@ from telebot import types
 
 import buttons
 from const import bot
+from menu import menu
 from profile import profile_menu
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'DavinCHBot.settings')
 django.setup()
 
-from users.models import User, Status, LikeUsers
+from users.models import User, Status, LikeUsers, Report
 
 
 def is_point_in_circle(latitude, longitude, circle_center_latitude, circle_center_longitude, radius_km=100):
@@ -160,10 +161,16 @@ def answer_like(chat_id, user_id):
     watch_like(questionnaire_chat_id=chat_id, questionnaire=questionnaire)
 
 
-def report(message, chat_id):
-    bot.send_message(chat_id=chat_id, text='Спасибо за обращение, мы рассмотрим твою заявку в ближайшее время')
-    # TODO Сделать отправку жалоб в админку
-
+def report(message, chat_id, user, user_id):
+    if message.content_type == 'text':
+        bot.send_message(chat_id=chat_id, text='Спасибо за обращение, мы рассмотрим твою заявку в ближайшее время')
+        menu(chat_id=chat_id, user=user)
+        report_user = User.objects.filter(chat_id=user_id)
+        if user:
+            Report.objects.create(user=report_user[0], text=message.text)
+    else:
+        msg = bot.send_message(chat_id=chat_id, text='Отправь текст, в котором ты объясняешь причину жалобы')
+        bot.register_next_step_handler(msg, report, chat_id, user, user_id)
 
 def add_action(type, user, questionnaire_chat_id):
     try:
@@ -212,6 +219,6 @@ def callback(data, chat_id, user):
     elif data[0] == 'report':
         add_action('жалоба', user, data[1])
         msg = bot.send_message(chat_id=chat_id, text='Опиши причину твоей жалобы')
-        bot.register_next_step_handler(msg, report, chat_id)
+        bot.register_next_step_handler(msg, report, chat_id, user, data[1])
     elif data[0] == 'watch_like':
         watch_like(questionnaire_chat_id=chat_id, questionnaire=user)

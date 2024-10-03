@@ -67,7 +67,7 @@ def check(id):
 
 def menu(user):
     markup = types.InlineKeyboardMarkup(row_width=1)
-    watch = types.InlineKeyboardButton('Смотреть анкты', callback_data='profiles')
+    watch = types.InlineKeyboardButton('Смотреть анкеты', callback_data='profiles')
     create = types.InlineKeyboardButton(f'Мэтчи ({user.like_users.all().count()})', callback_data='profiles|watch_like')
     edit_filter = types.InlineKeyboardButton('Настроить поиск', callback_data='filter')
     verefi = types.InlineKeyboardButton('Подтверждение анкеты', callback_data='edit_profile|verefi')

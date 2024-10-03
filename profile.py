@@ -8,6 +8,7 @@ from telebot import types
 import buttons
 import coord
 from const import bot, simbols
+from menu import menu
 from users.models import Photo
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'DavinCHBot.settings')
@@ -168,15 +169,13 @@ def verefi(message, chat_id, user, simbol):
             msg = bot.send_message(chat_id=chat_id, text='Отправь фотографию')
             bot.register_next_step_handler(msg, verefi, chat_id, user)
         else:
-            avatar_id = message.photo[-1].file_id
-            file_info = bot.get_file(avatar_id)
-            downloaded_file = bot.download_file(file_info.file_path)
-            path = f'verefi.jpg'
-            with open(path, 'wb') as new_file:
-                new_file.write(downloaded_file)
-            user.check_photo = File(open(path, 'rb'))
-            user.save(update_fields=['check_photo'])
-            profile_menu(chat_id=chat_id, user=user)
+            file_id = message.photo[-1].file_id
+            check_photo = Photo.objects.create(file_id=f'photo {file_id}')
+            user.check_simbol = simbol
+            user.need_verefi = True
+            user.check_photo = check_photo
+            user.save(update_fields=['need_verefi', 'check_photo', 'check_simbol'])
+            menu(chat_id=chat_id, user=user)
     else:
         bot.send_message(chat_id=chat_id, text='Твоя анкета уже подтверждена', reply_markup=buttons.go_to_menu())
 

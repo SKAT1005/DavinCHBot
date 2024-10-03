@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Список пользователей</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            display: flex;
+        }
+
+        .sidebar {
+            width: 200px;
+            background-color: #f0f0f0;
+            padding: 20px;
+        }
+
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .sidebar li {
+            margin-bottom: 10px;
+        }
+
+        .sidebar a {
+            display: block;
+            padding: 10px;
+            text-decoration: none;
+            color: #333;
+            border-radius: 5px;
+            background-color: #fff;
+            transition: background-color 0.3s ease;
+        }
+
+        .sidebar a:hover {
+            background-color: #ddd;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .sorting {
+            display: flex;
+        }
+
+        .sorting button {
+            margin-right: 10px;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            background-color: #fff;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .sorting button:hover {
+            background-color: #ddd;
+        }
+
+        .filters {
+            display: flex;
+        }
+
+        .filters select {
+            margin-right: 10px;
+            padding: 8px;
+            border: none;
+            border-radius: 5px;
+            background-color: #fff;
+        }
+
+        .user-list {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+
+        .user-card {
+            width: 1000px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 5px;
+        }
+
+        .user-card .user-images {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .user-card .user-images img, .user-card .user-images video, .user-card .user-images iframe {
+            width: 250px;
+            height: 250px;
+            object-fit: cover;
+            border-radius: 5px;
+        }
+
+        .user-card .user-info {
+            margin-top: 10px;
+        }
+
+        .user-card .user-info p {
+            margin: 5px 0;
+        }
+
+        .user-card .user-actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
+
+        .user-card button {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            background-color: #fff;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .user-card button:hover {
+            background-color: #ddd;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="sidebar">
+        <ul>
+            <li><a href="{% url 'user_list'%}">Список пользователей</a></li>
+            <li><a href="{% url 'report'%}">Жалобы</a></li>
+            <li><a href="{% url 'verefi'%}">Верефикация пользователей</a></li>
+            <li><a href="#">Управление рекламой</a></li>
+            <li><a href="{% url 'stat'%}">Статистика</a></li>
+            <li><a href="{% url 'admin:index'%}">Главная админ-панель</a></li>
+        </ul>
+    </div>
+
+    <div class="main-content">
+
+        <div class="user-list">
+            {%for user in users%}
+            <div class="user-card">
+                <div class="user-images">
+                    {%for file in user.avatars.all%}
+                    {% if file.get_type == 'photo' %}
+                    <img src="data:image/png;base64,{{file.get_data}}" alt="Фото профиля">
+                    {%else%}
+                    <video controls>
+                        <source src="data:video/mp4;base64,{{file.get_data}}" type="video/mp4">
+                        Твой браузер не поддерживает загрузку видео.
+                    </video>
+                    {%endif%}
+                    {%endfor%}
+                </div>
+                <div class="user-info">
+                    <p>Имя пользователя: {{user.name}}</p>
+                    <p>{{user.age}} лет, {{user.city}}</p>
+                    <p>Категория: {{user.category}}</p>
+                    <p>Описание: {{user.description}}</p>
+                    <p>Мэтчи: {{user.like_users.all.count}}</p>
+                    <p>Верефикация: {{user.check_verefi}}</p>
+                    <p>Статус: {{user.check_ban}}</p>
+                    <p>Символ для проверки: {{user.check_simbol}}</p>
+                    <p>Фотография для порверки: </p>
+                    <div class="user-images">
+                        <img src="data:image/png;base64,{{user.check_photo.get_data}}" alt="Фото Для проверки">
+                    </div>
+                </div>
+                <div class="user-actions">
+                    <a href="{% url 'acept_verefi' user.id%}">
+                        <button>Одобрить верефикацию</button>
+                    </a>
+                    <a href="{% url 'cansel_verefi' user.id%}">
+                        <button>Отказать в верефикации</button>
+                    </a>
+                </div>
+
+
+            </div>
+            {%endfor%}
+        </div>
+    </div>
+</body>
+</html>

@@ -1,3 +1,4 @@
+import base64
 import datetime
 import os
 import threading
@@ -34,6 +35,8 @@ def start(message):
         bot.clear_step_handler_by_chat_id(chat_id=chat_id)
         msg = bot.send_message(chat_id=chat_id, text='Укажи своё имя.', reply_markup=None)
         bot.register_next_step_handler_by_chat_id(chat_id, enter_name, chat_id)
+    elif user.is_ban:
+        bot.send_message(chat_id=chat_id, text='Вы забанены')
     elif user.add_photo == 'step 1':
         registration.add_photo(chat_id=chat_id, message=message)
     elif user.add_photo == 'step 2':
@@ -41,23 +44,23 @@ def start(message):
     else:
         menu(chat_id, user)
 
-
 @bot.message_handler(content_types=telebot.util.content_type_media)
 def answer_on_message(message):
     chat_id = message.chat.id
     user = User.objects.filter(chat_id=chat_id).first()
     if not user:
+        time.sleep(random.uniform(0.1, 1))
+        bot.clear_step_handler_by_chat_id(chat_id=chat_id)
         msg = bot.send_message(chat_id=chat_id, text='Укажи своё имя.', reply_markup=None)
         bot.register_next_step_handler(msg, enter_name, chat_id)
+    elif user.is_ban:
+        bot.send_message(chat_id=chat_id, text='Вы забанены')
     elif user.add_photo == 'step 1':
         registration.add_photo(chat_id=chat_id, message=message)
     elif user.add_photo == 'step 2':
         pass
     else:
-        bot.clear_step_handler_by_chat_id(chat_id=chat_id)
-        msg = bot.send_message(chat_id=chat_id, text='Укажи своё имя.', reply_markup=None)
-        bot.register_next_step_handler(msg, enter_name, chat_id)
-        # menu(chat_id, user)
+        menu(chat_id, user)
 
 
 @bot.callback_query_handler(func=lambda call: True)
@@ -74,6 +77,8 @@ def callback(call):
         bot.clear_step_handler_by_chat_id(chat_id=chat_id)
         msg = bot.send_message(chat_id=chat_id, text='Укажи свое имя', reply_markup=None)
         bot.register_next_step_handler(msg, enter_name, chat_id)
+    elif user[0].is_ban:
+        bot.send_message(chat_id=chat_id, text='Вы забанены')
     else:
         user = user[0]
         # user.update_last_active()

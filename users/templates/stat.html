@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Статистика</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            display: flex;
+        }
+
+        .sidebar {
+            width: 200px;
+            background-color: #f0f0f0;
+            padding: 20px;
+        }
+
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .sidebar li {
+            margin-bottom: 10px;
+        }
+
+        .sidebar a {
+            display: block;
+            padding: 10px;
+            text-decoration: none;
+            color: #333;
+            border-radius: 5px;
+            background-color: #fff;
+            transition: background-color 0.3s ease;
+        }
+
+        .sidebar a:hover {
+            background-color: #ddd;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 20px;
+        }
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .stat-card {
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .stat-card h3 {
+            margin-bottom: 10px;
+        }
+
+        .stat-card p {
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="sidebar">
+        <ul>
+            <li><a href="{% url 'user_list'%}">Список пользователей</a></li>
+            <li><a href="{% url 'report'%}">Жалобы</a></li>
+            <li><a href="{% url 'verefi'%}">Верефикация пользователей</a></li>
+            <li><a href="#">Управление рекламой</a></li>
+            <li><a href="{% url 'stat'%}">Статистика</a></li>
+            <li><a href="{% url 'admin:index'%}">Главная админ-панель</a></li>
+        </ul>
+    </div>
+
+    <div class="main-content">
+        <h2>Статистика</h2>
+        <div class="stats-container">
+            <div class="stat-card">
+                <h3>Кол-во пользователей</h3>
+                <p>{{users_count}}</p>
+            </div>
+
+            <div class="stat-card">
+                <h3>Кол-во забаненых анкет</h3>
+                <p>{{ban_users_count}}</p>
+            </div>
+            <div class="stat-card">
+                <h3>Кол-во активных анкет</h3>
+                <p>{{active_users_count}}</p>
+            </div>
+            <div class="stat-card">
+                <h3>Кол-во подтвержденных</h3>
+                <p>{{verefi_users_count}}</p>
+            </div>
+
+            <div class="stat-card">
+                <h3>Кол-во женщин</h3>
+                <p>{{female_count}}</p>
+            </div>
+
+            <div class="stat-card">
+                <h3>Кол-во мужчин</h3>
+                <p>{{male_count}}</p>
+            </div>
+
+
+            <div class="stat-card">
+                <h3>Кол-во активных мужских аккаунтов</h3>
+                <p>{{active_female_count}}</p>
+            </div>
+
+            <div class="stat-card">
+                <h3>Кол-во активных женских аккаунтов</h3>
+                <p>{{active_male_count}}</p>
+                <p>🤙👌🤘🤟✌️</p>
+            </div>
+
+            <!-- Добавьте сюда ещё статистические данные -->
+        </div>
+    </div>
+</div>
+</body>
+</html>

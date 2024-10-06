@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Анкета</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            display: flex;
+        }
+
+        .sidebar {
+            width: 200px;
+            background-color: #f0f0f0;
+            padding: 20px;
+        }
+
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .sidebar li {
+            margin-bottom: 10px;
+        }
+
+        .sidebar a {
+            display: block;
+            padding: 10px;
+            text-decoration: none;
+            color: #333;
+            border-radius: 5px;
+            background-color: #fff;
+            transition: background-color 0.3s ease;
+        }
+
+        .sidebar a:hover {
+            background-color: #ddd;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .sorting {
+            display: flex;
+        }
+
+        .sorting button {
+            margin-right: 10px;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            background-color: #fff;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .sorting button:hover {
+            background-color: #ddd;
+        }
+
+        .filters {
+            display: flex;
+        }
+
+        .filters select {
+            margin-right: 10px;
+            padding: 8px;
+            border: none;
+            border-radius: 5px;
+            background-color: #fff;
+        }
+
+        .user-list {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+
+        .user-card {
+            width: 1000px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 5px;
+        }
+
+        .user-card .user-images {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .user-card .user-images img, .user-card .user-images video, .user-card .user-images iframe {
+            width: 250px;
+            height: 250px;
+            object-fit: cover;
+            border-radius: 5px;
+        }
+
+        .user-card .user-info {
+            margin-top: 10px;
+        }
+
+        .user-card .user-info p {
+            margin: 5px 0;
+        }
+
+        .user-card .user-actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
+
+        .user-card button {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            background-color: #fff;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .user-card button:hover {
+            background-color: #ddd;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+<div class="sidebar">
+            <ul>
+                <li><a href="{% url 'user_list'%}">Список пользователей</a></li>
+                <li><a href="{% url 'report'%}">Жалобы</a></li>
+                <li><a href="{% url 'verefi'%}">Верификация пользователей</a></li>
+                <li><a href="{% url 'ad_list'%}">Управление рекламой</a></li>
+                <li><a href="{% url 'stat'%}">Статистика</a></li>
+                <li><a href="{% url 'admin:index'%}">Главная админ-панель</a></li>
+            </ul>
+        </div>
+    <div class="main-content">
+    <h1>Анкета</h1>
+
+    <form method="post">
+        {% csrf_token %}
+        <label for="name">Имя анкеты:</label>
+        <input type="text" id="name" name="name" required>
+        <br><br>
+        <label for="gender">Пол:</label>
+        <select id="gender" name="gender">
+            <option value="мужской">Мужской</option>
+            <option value="женский">Женский</option>
+        </select>
+        <br><br>
+
+        <label for="seeking">Ищу:</label>
+        <select id="seeking" name="seeking">
+            <option value="мужской">Мужчину</option>
+            <option value="женский">Женщину</option>
+            <option value="любой">Другого</option>
+        </select>
+        <br><br>
+
+        <label for="age">Возраст:</label>
+        <input type="number" id="age" name="age" min="18">
+        <br><br>
+
+        <label for="city">Город:</label>
+        <input type="text" id="city" name="city" required>
+        <br><br>
+
+        <label for="category">Категория:</label>
+        <select id="category" name="category">
+            <option value="Свободные отношения❤️‍🔥">Свободные отношения❤️‍🔥</option>
+            <option value="Серьёзные отношения💞">Серьёзные отношения💞</option>
+            <option value="Дружба🫡">Дружба🫡</option>
+            <option value="Не определился🫠">Не определился🫠</option>
+        </select>
+        <br><br>
+
+        <label for="description">Описание:</label>
+        <textarea id="description" name="description"></textarea>
+        <br><br>
+
+        <h2>Фотографии</h2>
+        <label for="photo1">ID фото 1:</label>
+        <input type="text" id="photo1" name="photo1">
+        <br>
+
+        <label for="photo2">ID фото 2:</label>
+        <input type="text" id="photo2" name="photo2">
+        <br>
+
+        <label for="photo3">ID фото 3:</label>
+        <input type="text" id="photo3" name="photo3">
+        <br><br>
+
+        <input type="submit" value="Отправить">
+    </form>
+        {% if messages %}
+           <ul class="messages">
+               {% for message in messages %}
+                   <li>{{ message }}</li>
+               {% endfor %}
+           </ul>
+       {% endif %}
+    </div>
+</div>
+</body>
+</html>
+

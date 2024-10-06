@@ -1,6 +1,7 @@
 import base64
 import datetime
 
+from django.contrib.auth.models import User as main_user
 from django.db import models
 from django.utils import timezone
 from const import bot
@@ -27,11 +28,13 @@ class User(models.Model):
     like_users = models.ManyToManyField('LikeUsers', blank=True,
                                         verbose_name='Пользователи, которые лайкнули анкету')
     last_active = models.DateTimeField(default=None, null=True, verbose_name='Время последней активности')
+    last_ad_time = models.DateTimeField(default=None, null=True, verbose_name='Время просмотра последней рекламы')
     last_like = models.DateTimeField(default=None, null=True, verbose_name='Время последней отправки сообщения о лайках')
     is_checked = models.BooleanField(default=False, verbose_name='Проеверен ли аккаунт')
     is_admin = models.BooleanField(default=False, verbose_name='Является ли пользователь админом')
     is_ban = models.BooleanField(default=False, verbose_name='В бане ли аккаунт')
     add_photo = models.CharField(max_length=16, default='step 1', verbose_name='Добавляют ли фото')
+    get_photo_id = models.BooleanField(default=False, verbose_name='Получает ли пользователь id фотографий?')
 
     def update_last_active(self):
         self.last_active = timezone.now()
@@ -82,12 +85,15 @@ class Photo(models.Model):
 
     def get_data(self):
         if not self.base64_file:
-            type, file_id = self.file_id.split()
-            file_info = bot.get_file(file_id)
-            downloaded_file = bot.download_file(file_info.file_path)
-            encoded_string = base64.b64encode(downloaded_file).decode('utf-8')
-            self.base64_file = encoded_string
-            self.save(update_fields=['base64_file'])
+            try:
+                type, file_id = self.file_id.split()
+                file_info = bot.get_file(file_id)
+                downloaded_file = bot.download_file(file_info.file_path)
+                encoded_string = base64.b64encode(downloaded_file).decode('utf-8')
+                self.base64_file = encoded_string
+                self.save(update_fields=['base64_file'])
+            except Exception:
+                return None
         return self.base64_file
 
     def get_type(self):
@@ -98,3 +104,21 @@ class Photo(models.Model):
 class Report(models.Model):
     user = models.ForeignKey(User, related_name='reports', on_delete=models.CASCADE, verbose_name='Пользователь, на которого подана жалоба')
     text = models.TextField(verbose_name='Текст жалобы')
+
+
+class Ad(models.Model):
+    photo = models.ImageField(upload_to='photos', verbose_name='Фотография рекламы')
+    text = models.TextField(verbose_name='Текст рекламы')
+    is_active = models.BooleanField(default=True, verbose_name='Активна ли реклама')
+
+
+    def status(self):
+        if self.is_active:
+            return 'Активна'
+        return 'Не активна'
+
+
+class Logs(models.Model):
+    type = models.CharField(max_length=2048, verbose_name='Тип Действия')
+    user = models.ForeignKey(main_user, related_name='logs', on_delete=models.CASCADE, verbose_name='Пользователь, который совершает действие')
+    time = models.DateTimeField(verbose_name='Время действия')

@@ -24,7 +24,12 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'DavinCHBot.settings')
 django.setup()
 from users.models import User, Status
 
-
+@bot.message_handler(commands=['get_photo_id'])
+def get_photo_id(message):
+    user = User.objects.filter(chat_id=message.chat.id).first()
+    user.get_photo_id = True
+    user.save(update_fields=['get_photo_id'])
+    bot.send_message(user.chat_id, text='Отпарвляйте фотографии и получайте их ID')
 @bot.message_handler(commands=['start'])
 def start(message):
     # КUser.objects.all().delete()
@@ -53,6 +58,12 @@ def answer_on_message(message):
         bot.clear_step_handler_by_chat_id(chat_id=chat_id)
         msg = bot.send_message(chat_id=chat_id, text='Укажи своё имя.', reply_markup=None)
         bot.register_next_step_handler(msg, enter_name, chat_id)
+    elif user.get_photo_id and message.content_type in ['photo', 'video']:
+        if message.content_type == 'photo':
+            avatar_id = f'photo {message.photo[-1].file_id}'
+        else:
+            avatar_id = f'video {message.video.file_id}'
+        bot.send_message(chat_id=chat_id, text=avatar_id)
     elif user.is_ban:
         bot.send_message(chat_id=chat_id, text='Вы забанены')
     elif user.add_photo == 'step 1':

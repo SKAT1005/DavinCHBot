@@ -31,6 +31,7 @@ def edit_photo(message, chat_id, user, number):
                 avatar = Photo.objects.create(file_id=avatar_id)
                 user.avatars.add(avatar)
         user.is_checked = False
+        user.save(update_fields='is_checked')
         photo(chat_id=chat_id, user=user)
     elif message.content_type == 'video':
         avatar_id = f'video {message.video.file_id}'
@@ -194,7 +195,8 @@ def edit_name(message, chat_id, user):
             bot.register_next_step_handler(msg, edit_name, chat_id, user)
         else:
             user.name = name
-            user.save(update_fields=['name'])
+            user.is_checked = False
+            user.save(update_fields=['name', 'is_checked'])
             profile_menu(chat_id=chat_id, user=user)
 
 

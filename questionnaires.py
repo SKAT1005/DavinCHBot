@@ -1,6 +1,7 @@
 import datetime
 import math
 import os
+import random
 from itertools import chain
 
 import django
@@ -15,7 +16,7 @@ from profile import profile_menu
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'DavinCHBot.settings')
 django.setup()
 
-from users.models import User, Status, LikeUsers, Report
+from users.models import User, Status, LikeUsers, Report, Ad
 
 
 def is_point_in_circle(latitude, longitude, circle_center_latitude, circle_center_longitude, radius_km=100):
@@ -61,16 +62,28 @@ def get_user(user):
 
 
 def send_questionnaires(chat_id, user):
-    try:
-        questionnaire = get_user(user=user)
-        if not questionnaire:
-            raise Exception
-    except Exception as e:
-        bot.send_message(chat_id=chat_id,
-                         text='К сожалению, подходящие для тебя анкеты закончились. Попробуй обновить фильтры поиска🥹',
-                         reply_markup=buttons.go_to_menu())
-    else:
-        send_profile(chat_id, questionnaire, buttons.questionnaire_menu(questionnaire.chat_id))
+    n = True
+    if random.randint(1, 100) <= 25 and ( not user.last_ad_time or user.last_ad_time.timestamp() < (
+            timezone.now() - datetime.timedelta(hours=1)).timestamp()):
+        try:
+            ad = random.choice(Ad.objects.filter(is_active=True))
+            user.last_ad_time = timezone.now()
+            user.save(update_fields=['last_ad_time'])
+            bot.send_photo(chat_id=chat_id, photo=ad.photo, caption=ad.text, reply_markup=buttons.watch_questionnaire())
+            n = False
+        except Exception:
+            pass
+    if n:
+        try:
+            questionnaire = get_user(user=user)
+            if not questionnaire:
+                raise Exception
+        except Exception as e:
+            bot.send_message(chat_id=chat_id,
+                             text='К сожалению, подходящие для тебя анкеты закончились. Попробуй обновить фильтры поиска🥹',
+                             reply_markup=buttons.go_to_menu())
+        else:
+            send_profile(chat_id, questionnaire, buttons.questionnaire_menu(questionnaire.chat_id))
 
 
 def add_media(medias, avatar_data):
@@ -171,6 +184,7 @@ def report(message, chat_id, user, user_id):
     else:
         msg = bot.send_message(chat_id=chat_id, text='Отправь текст, в котором ты объясняешь причину жалобы')
         bot.register_next_step_handler(msg, report, chat_id, user, user_id)
+
 
 def add_action(type, user, questionnaire_chat_id):
     try:

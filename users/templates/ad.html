@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+{% load static %}
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
@@ -123,53 +124,40 @@
     <div class="container">
         <div class="sidebar">
             <ul>
-                <li><a href="#">Список пользователей</a></li>
-                <li><a href="#">Жалобы</a></li>
-                <li><a href="#">Верефикация пользователей</a></li>
-                <li><a href="#">Статистика</a></li>
-                <li><a href="#">Главная админ-панель</a></li>
+                <li><a href="{% url 'user_list'%}">Список пользователей</a></li>
+                <li><a href="{% url 'report'%}">Жалобы</a></li>
+                <li><a href="{% url 'verefi'%}">Верификация пользователей</a></li>
+                <li><a href="{% url 'ad_list'%}">Управление рекламой</a></li>
+                <li><a href="{% url 'stat'%}">Статистика</a></li>
+                <li><a href="{% url 'admin:index'%}">Главная админ-панель</a></li>
             </ul>
         </div>
 
         <div class="main-content">
             <div class="header">
+                <a href="{% url 'create_ad'%}">
                 <button class="create-ad-button">Создать рекламу</button>
+                </a>
             </div>
 
             <div class="ad-list">
+                {% for ad in ads %}
                 <div class="ad-card">
-                    <img src="https://via.placeholder.com/250x150" alt="Рекламная картинка" class="ad-image">
+                    <img src="{% static 'dd'%}{{ad.photo.url}}" alt="Рекламная картинка" class="ad-image">
                     <div class="ad-info">
                         <p>Текст рекламы</p>
-                        <p>Статус: Активна</p>
+                        <p>Статус: {{ad.status}}</p>
                     </div>
                     <div class="ad-actions">
+                        <a href="{% url 'delete_ad' ad.id%}">
                         <button>Удалить</button>
-                        <button>Отключить показ</button>
+                        </a>
+                        <a href="{% url 'deactivate_ad' ad.id%}">
+                        <button>Отключить/включить показ</button>
+                        </a>
                     </div>
                 </div>
-                <div class="ad-card">
-                    <img src="https://via.placeholder.com/250x150" alt="Рекламная картинка" class="ad-image">
-                    <div class="ad-info">
-                        <p>Текст рекламы</p>
-                        <p>Статус: Активна</p>
-                    </div>
-                    <div class="ad-actions">
-                        <button>Удалить</button>
-                        <button>Отключить показ</button>
-                    </div>
-                </div>
-                <div class="ad-card">
-                    <img src="https://via.placeholder.com/250x150" alt="Рекламная картинка" class="ad-image">
-                    <div class="ad-info">
-                        <p>Текст рекламы</p>
-                        <p>Статус: Активна</p>
-                    </div>
-                    <div class="ad-actions">
-                        <button>Удалить</button>
-                        <button>Отключить показ</button>
-                    </div>
-                </div>
+                {% endfor %}
             </div>
         </div>
     </div>

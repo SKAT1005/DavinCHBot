@@ -112,59 +112,60 @@
 </head>
 
 <body>
-    <div class="container">
-        <div class="sidebar">
-            <ul>
-                <li><a href="#">Список пользователей</a></li>
-                <li><a href="#">Жалобы</a></li>
-                <li><a href="#">Верефикация пользователей</a></li>
-                <li><a href="#">Управление рекламой</a></li>
-                <li><a href="#">Статистика</a></li>
-                <li><a href="#">Главная админ-панель</a></li>
-            </ul>
-        </div>
-
-        <div class="main-content">
-            <div class="form-container">
-                <h2>Создание рекламы</h2>
-                <form>
-                    <label for="image" class="form-label">Фотография:</label>
-                    <input type="file" id="image" accept="image/*" class="form-input">
-                    <button type="button" class="upload-button">Загрузить</button>
-                    <img src="#" alt="Предпросмотр изображения" class="preview-image">
-
-                    <label for="text" class="form-label">Текст рекламы:</label>
-                    <textarea id="text" class="form-input" rows="5"></textarea>
-
-                    <button type="submit" class="form-button">Создать рекламу</button>
-                </form>
-            </div>
-        </div>
+<div class="container">
+    <div class="sidebar">
+        <ul>
+            <li><a href="{% url 'user_list'%}">Список пользователей</a></li>
+            <li><a href="{% url 'report'%}">Жалобы</a></li>
+            <li><a href="{% url 'verefi'%}">Верификация пользователей</a></li>
+            <li><a href="{% url 'ad_list'%}">Управление рекламой</a></li>
+            <li><a href="{% url 'stat'%}">Статистика</a></li>
+            <li><a href="{% url 'admin:index'%}">Главная админ-панель</a></li>
+        </ul>
     </div>
 
-    <script>
-        const uploadButton = document.querySelector('.upload-button');
-        const imageInput = document.getElementById('image');
-        const previewImage = document.querySelector('.preview-image');
+    <div class="main-content">
+        <div class="form-container">
+            <h2>Создание рекламы</h2>
+            <form method="post" enctype="multipart/form-data">
+                {%csrf_token%}
+                <label for="image" class="form-label">Фотография:</label>
+                <input type="file" id="image" name="image" accept="image/*" class="form-input">
+                <button type="button" class="upload-button">Загрузить</button>
+                <img src="#" alt="Предпросмотр изображения" class="preview-image">
 
-        uploadButton.addEventListener('click', () => {
-            imageInput.click();
-        });
+                <label for="text" class="form-label">Текст рекламы:</label>
+                <textarea id="text" name="text" class="form-input" rows="5"></textarea>
 
-        imageInput.addEventListener('change', (event) => {
-            const file = event.target.files[0];
-            const reader = new FileReader();
+                <button type="submit" class="form-button">Создать рекламу</button>
+            </form>
+        </div>
+    </div>
+</div>
 
-            reader.onload = (e) => {
-                previewImage.src = e.target.result;
-            };
+<script>
+    const uploadButton = document.querySelector('.upload-button');
+    const imageInput = document.getElementById('image');
+    const previewImage = document.querySelector('.preview-image');
 
-            if (file) {
-                reader.readAsDataURL(file);
-            } else {
-                previewImage.src = "#";
-            }
-        });
-    </script>
+    uploadButton.addEventListener('click', () => {
+        imageInput.click();
+    });
+
+    imageInput.addEventListener('change', (event) => {
+        const file = event.target.files[0];
+        const reader = new FileReader();
+
+        reader.onload = (e) => {
+            previewImage.src = e.target.result;
+        };
+
+        if (file) {
+            reader.readAsDataURL(file);
+        } else {
+            previewImage.src = "#";
+        }
+    });
+</script>
 </body>
 </html>

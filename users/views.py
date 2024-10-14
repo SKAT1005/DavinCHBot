@@ -135,11 +135,11 @@ def stat(request):
     users_count = all_users.count()
     ban_users_count = all_users.filter(is_ban=True).count()
     active_users_count = all_users.filter(active=True).count()
-    verefi_users_count = all_users.filter(active=True).count()
+    verefi_users_count = all_users.filter(is_checked=True).count()
     female_count = all_users.filter(gender='женский').count()
     male_count = all_users.filter(gender='мужской').count()
-    active_female_count = all_users.filter(active=True, gender='женский').count()
-    active_male_count = all_users.filter(active=True, gender='мужской').count()
+    active_female_count = all_users.filter(active=True).filter(gender='женский').count()
+    active_male_count = all_users.filter(active=True).filter(gender='мужской').count()
     return render(request, 'stat.html', context={
         'users_count': users_count,
         'ban_users_count': ban_users_count,

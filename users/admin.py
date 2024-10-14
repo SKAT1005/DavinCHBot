@@ -9,6 +9,8 @@ class UserAdmin(admin.ModelAdmin):
 @admin.register(Logs)
 class LogsAdmin(admin.ModelAdmin):
     fields = ('time', 'type', 'user')
+    list_display = ('id', 'user', 'type', 'time')
+    list_filter = ('user', )
 
 
 @admin.register(Report)

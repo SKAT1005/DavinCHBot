@@ -16,6 +16,8 @@ django.setup()
 
 
 def edit_photo(message, chat_id, user, number):
+    user.is_checked = False
+    user.save()
     if message.content_type == 'photo':
         avatar_id = f'photo {message.photo[-1].file_id}'
         if number == '1':
@@ -30,8 +32,6 @@ def edit_photo(message, chat_id, user, number):
             except Exception:
                 avatar = Photo.objects.create(file_id=avatar_id)
                 user.avatars.add(avatar)
-        user.is_checked = False
-        user.save(update_fields='is_checked')
         photo(chat_id=chat_id, user=user)
     elif message.content_type == 'video':
         avatar_id = f'video {message.video.file_id}'
@@ -47,8 +47,6 @@ def edit_photo(message, chat_id, user, number):
             except Exception:
                 avatar = Photo.objects.create(file_id=avatar_id)
                 user.avatars.add(avatar)
-        user.is_checked = False
-        user.save()
         photo(chat_id=chat_id, user=user)
     else:
         msg = bot.send_message(chat_id=chat_id, text='Отправь фотографию/видео',
@@ -264,6 +262,8 @@ def callback(data, chat_id, user):
         bot.send_message(chat_id=chat_id, text='Твоя анкета удалена', reply_markup=buttons.create())
     elif data[0] == 'verefi':
         simbol = random.choice(simbols)
+        while not simbol:
+            simbol = random.choice(['🤙', '👌', '🤘','🤟'])
         text = f'Для подтверждения сделай селфи со следующим символом: {simbol}'
         msg = bot.send_message(chat_id=chat_id, text=text, reply_markup=buttons.go_back('menu'))
         bot.register_next_step_handler(msg, verefi, chat_id, user, simbol)

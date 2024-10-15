@@ -60,16 +60,27 @@ def get_user(user):
                 return usr
     return None
 
-
+def send_ad_photo(ad):
+    medias = []
+    if ad.photo1:
+        medias.append(types.InputMediaPhoto(media=ad.photo1))
+    if ad.photo2:
+        medias.append(types.InputMediaPhoto(media=ad.photo2))
+    if ad.photo3:
+        medias.append(types.InputMediaPhoto(media=ad.photo3))
+    return medias
 def send_questionnaires(chat_id, user):
     n = True
-    if random.randint(1, 100) <= 25 and ( not user.last_ad_time or user.last_ad_time.timestamp() < (
+    if random.randint(1, 100) <= 200 and ( not user.last_ad_time or user.last_ad_time.timestamp() < (
             timezone.now() - datetime.timedelta(hours=1)).timestamp()):
         try:
             ad = random.choice(Ad.objects.filter(is_active=True))
             user.last_ad_time = timezone.now()
             user.save(update_fields=['last_ad_time'])
-            bot.send_photo(chat_id=chat_id, photo=ad.photo, caption=ad.text, reply_markup=buttons.watch_questionnaire())
+            medias = send_ad_photo(ad)
+            if medias:
+                bot.send_media_group(chat_id=chat_id, media=medias)
+            bot.send_message(chat_id=chat_id, text=ad.text, reply_markup=buttons.watch_questionnaire())
             n = False
         except Exception:
             pass

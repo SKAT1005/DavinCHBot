@@ -22,7 +22,19 @@ from registration import enter_name
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'DavinCHBot.settings')
 django.setup()
-from users.models import User, Status
+from users.models import User, Status, Ad
+
+from django.contrib.auth.models import Group
+
+Group.objects.get_or_create(name='бан профиля')
+Group.objects.get_or_create(name='изменение профиля')
+Group.objects.get_or_create(name='создание аккаунтов')
+Group.objects.get_or_create(name='статистика')
+Group.objects.get_or_create(name='удаление профиля')
+Group.objects.get_or_create(name='управление верефикацией')
+Group.objects.get_or_create(name='управление жалобами')
+Group.objects.get_or_create(name='управление рекламой')
+
 
 @bot.message_handler(commands=['get_photo_id'])
 def get_photo_id(message):
@@ -30,6 +42,8 @@ def get_photo_id(message):
     user.get_photo_id = True
     user.save(update_fields=['get_photo_id'])
     bot.send_message(user.chat_id, text='Отпарвляйте фотографии и получайте их ID')
+
+
 @bot.message_handler(commands=['start'])
 def start(message):
     # КUser.objects.all().delete()
@@ -48,6 +62,7 @@ def start(message):
         pass
     else:
         menu(chat_id, user)
+
 
 @bot.message_handler(content_types=telebot.util.content_type_media)
 def answer_on_message(message):
@@ -134,10 +149,21 @@ def status():
                 m = (timezone.now() - datetime.timedelta(days=365)).timestamp()
             if n <= m:
                 i.delete()
-        time.sleep(60*60*12)
+        time.sleep(60 * 60 * 12)
+
+
+def ad_check():
+    while True:
+        for ad in Ad.objects.filter(is_active=True):
+            if ad.deactivate_time.timestamp() >= timezone.now():
+                ad.is_active = False
+                ad.save(update_fields=['is_active'])
+        time.sleep(60 * 60)
 
 
 if __name__ == '__main__':
-    polling_thread = threading.Thread(target=status)
-    polling_thread.start()
+    polling_thread1 = threading.Thread(target=status)
+    polling_thread1.start()
+    polling_thread2 = threading.Thread(target=ad_check)
+    polling_thread2.start()
     bot.polling(none_stop=True)

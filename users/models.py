@@ -107,8 +107,11 @@ class Report(models.Model):
 
 
 class Ad(models.Model):
-    photo = models.ImageField(upload_to='photos', verbose_name='Фотография рекламы')
+    photo1 = models.ImageField(upload_to='photos', blank=True, null=True, verbose_name='Фотография рекламы1')
+    photo2 = models.ImageField(upload_to='photos', blank=True, null=True, verbose_name='Фотография рекламы2')
+    photo3 = models.ImageField(upload_to='photos', blank=True, null=True, verbose_name='Фотография рекламы3')
     text = models.TextField(verbose_name='Текст рекламы')
+    deactivate_time = models.DateTimeField(verbose_name='Время деактивации')
     is_active = models.BooleanField(default=True, verbose_name='Активна ли реклама')
 
 

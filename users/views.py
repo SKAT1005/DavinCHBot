@@ -1,3 +1,4 @@
+import datetime
 import random
 
 from django.contrib import messages
@@ -236,10 +237,18 @@ def create_ad(request):
         return HttpResponseRedirect('/profiles')
     if request.method == 'POST':
         create_logs(request.user, f'Создание рекламы')
-        photo = request.FILES.get('image')
+        photo1 = request.FILES.get('image1')
+        photo2 = request.FILES.get('image2')
+        photo3 = request.FILES.get('image3')
+        try:
+            deactivate_time = int(request.POST.get('deactivate_time'))
+            deactivate_time = timezone.now() + datetime.timedelta(hours=deactivate_time)
+        except Exception:
+            messages.error(request, 'Время деактивации должно быть числом')
+            return render(request, 'create_ad.html')
         text = request.POST.get('text')
         try:
-            Ad.objects.create(photo=photo, text=text)
+            Ad.objects.create(photo1=photo1, photo2=photo2, photo3=photo3, text=text, deactivate_time=deactivate_time)
         except Exception as e:
             pass
         return HttpResponseRedirect('/ad')
@@ -367,7 +376,9 @@ def create_ancete(request):
 
 
 def login_view(request):
-    if request.method == 'POST':
+    if request.user.is_authenticated:
+        return redirect('/profiles')
+    elif request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
 

@@ -143,9 +143,17 @@
             <div class="ad-list">
                 {% for ad in ads %}
                 <div class="ad-card">
-                    <img src="{% static 'dd'%}{{ad.photo.url}}" alt="Рекламная картинка" class="ad-image">
+                    {%if ad.photo1%}
+                    <img src="{% static 'dd'%}{{ad.photo1.url}}" alt="Рекламная картинка" class="ad-image">
+                    {% endif %}
+                    {%if ad.photo2%}
+                    <img src="{% static 'dd'%}{{ad.photo2.url}}" alt="Рекламная картинка" class="ad-image">
+                    {% endif %}
+                    {%if ad.photo3%}
+                    <img src="{% static 'dd'%}{{ad.photo3.url}}" alt="Рекламная картинка" class="ad-image">
+                    {% endif %}
                     <div class="ad-info">
-                        <p>Текст рекламы</p>
+                        <p>Текст рекламы: {{ad.text}}</p>
                         <p>Статус: {{ad.status}}</p>
                     </div>
                     <div class="ad-actions">

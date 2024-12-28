@@ -1,12 +1,9 @@
 import os
 
 import django
-from telebot import TeleBot, apihelper
+from telebot import TeleBot
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'DavinCHBot.settings')
-django.setup()
-
-API_TOKEN = '7171194252:AAGyTNMYCDdA-Zb3jvz5qVCFS0Qfwaf_ieo'
+API_TOKEN = '7071542790:AAGLBF9X6V-PDSqcJAPXkfaHBvFR8haowu0'
 
 bot = TeleBot(API_TOKEN)
 

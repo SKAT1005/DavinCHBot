@@ -278,7 +278,7 @@
                         <a href="{% url 'delete_profile' user.id %}">
                             <button>Удалить анкету</button>
                         </a>
-                        <a href="https://web.telegram.org/k/#{{ user.chat_id }}">
+                        <a href="https://t.me/{{ bot }}?start=ancete_{{ user.chat_id }}">
                             <button>Посмотреть аккаунт пользователя</button>
                         </a>
                     </div>

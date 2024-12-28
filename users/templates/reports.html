@@ -171,14 +171,16 @@
                     {%endfor%}
                 </div>
                 <div class="user-info">
-                    <p>Имя пользователя: {{report.user.name}}</p>
-                    <p>{{user.age}} лет, {{report.user.city}}</p>
-                    <p>Категория: {{report.user.category}}</p>
-                    <p>Описание: {{report.user.description}}</p>
-                    <p>Мэтчи: {{report.user.like_users.all.count}}</p>
-                    <p>Верефикация: {{user.check_verefi}}</p>
-                    <p>Статус: {{report.user.check_ban}}</p>
-                    <p>Текст жалобы: {{report.text}}</p>
+                    <p>Имя пользователя: {{ report.user.name }}</p>
+                        <p>Пол пользователя: {{ report.user.gender }}</p>
+                        <p>Возраст пользователя: {{ report.user.age }} лет</p>
+                        <p>Город пользователя: {{ report.user.city }}</p>
+                        <p>Категория: {{ report.user.category }}</p>
+                        <p>Описание: {{ report.user.description }}</p>
+                        <p>Активен ли пользователь: {% if report.user.active %}Да{% else %}Нет{% endif %}</p>
+                        <p>Мэтчи: {{ report.user.like_users.all.count }}</p>
+                        <p>Верификация: {{ report.user.check_verefi }}</p>
+                        <p>Статус: {{ report.user.check_ban }}</p>
                 </div>
                 <div class="user-actions">
                     <a href="{% url 'ban_profile' report.user.id%}">
@@ -190,6 +192,9 @@
                     <a href="{% url 'cansel_report' report.id%}">
                         <button>Отказать</button>
                     </a>
+                    <a href="https://t.me/{{ bot }}?start=ancete_{{ user.chat_id }}">
+                            <button>Посмотреть аккаунт пользователя</button>
+                        </a>
                 </div>
             </div>
             {%endfor%}

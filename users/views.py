@@ -69,7 +69,7 @@ def user_view(request):
             users = users.order_by(sorting)
 
         # Пагинация
-        paginator = Paginator(users, 1)  # Показываем по 10 пользователей на странице
+        paginator = Paginator(users, 10)  # Показываем по 10 пользователей на странице
         page = request.GET.get('page')
 
         try:
@@ -92,7 +92,8 @@ def user_view(request):
             'users': users_page,
             'citys': unique_cities,
             'page_obj': users_page,
-            'filters': page_url,  # Передаем фильтры в шаблон
+            'filters': page_url,
+            'bot': bot.get_me().username
         })
 
 
@@ -166,14 +167,15 @@ class EditProfile(View):
             user.gender = gender
             user.find_gender = seeking
             user.age = age
-            user.city = city
-            user.latitude = latitude
-            user.longitude = longitude
+            if city:
+                user.city = city
+                user.latitude = latitude
+                user.longitude = longitude
+                user.save(update_fields=['latitude', 'longitude', 'city'])
             user.category = category
             user.description = description
             user.save(
-                update_fields=['name', 'gender', 'find_gender', 'age', 'city', 'category', 'description', 'latitude',
-                               'longitude'])
+                update_fields=['name', 'gender', 'find_gender', 'age', 'category', 'description'])
             return render(request, 'edit_profile.html', context={'user': user})
         except Exception:
             return HttpResponseRedirect('/profiles')
@@ -261,7 +263,8 @@ def report(request):
     elif not request.user.groups.filter(name='управление жалобами'):
         return HttpResponseRedirect('/profiles')
     reports = Report.objects.all()
-    return render(request, 'reports.html', context={'reports': reports})
+    return render(request, 'reports.html', context={'reports': reports,
+                                                    'bot': bot.get_me().username})
 
 
 def cansel_report(request, pk):
@@ -447,9 +450,11 @@ def login_view(request):
             messages.error(request, 'Неверные имя пользователя или пароль.')
     return render(request, 'login.html')
 
+
 def add_media(medias, avatar_data, text=None):
     medias.append(types.InputMediaPhoto(media=avatar_data, caption=text))
     return medias
+
 
 def mailing(request):
     if not request.user.is_authenticated:
@@ -471,7 +476,10 @@ def mailing(request):
             medias = add_media(medias, photo3)
         for user in User.objects.all():
             try:
-                bot.send_media_group(user.chat_id, medias)
+                if medias:
+                    bot.send_media_group(user.chat_id, medias)
+                else:
+                    bot.send_message(user.chat_id, text)
             except Exception as e:
                 pass
         return HttpResponseRedirect('/mailing')

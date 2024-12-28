@@ -280,7 +280,7 @@ def enter_name(message, chat_id):
         elif ln == 0:
             msg = bot.send_message(chat_id=chat_id, text='Имя не может быть пустым. Пожалуйста, введите имя.')
             bot.register_next_step_handler(msg, enter_name, chat_id)
-        elif not name.replace(" ", "").isalpha():
+        elif not name.replace(" ", "").isalpha() or '/start' in name:
             msg = bot.send_message(chat_id=chat_id, text='Имя должно содержать только буквы и пробелы.')
             bot.register_next_step_handler(msg, enter_name, chat_id)
         else:

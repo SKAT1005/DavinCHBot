@@ -190,9 +190,14 @@ def edit_name(message, chat_id, user):
         name = message.text
         ln = len(name)
         if ln > 100:
-            msg = bot.send_message(chat_id=chat_id, text='Максимальная длина имени 100 символов',
-                                   reply_markup=buttons.go_back('edit_profile'))
-            bot.register_next_step_handler(msg, edit_name, chat_id, user)
+            msg = bot.send_message(chat_id=chat_id, text='Максимальная длина имени 100 символов')
+            bot.register_next_step_handler(msg, edit_name, chat_id)
+        elif ln == 0:
+            msg = bot.send_message(chat_id=chat_id, text='Имя не может быть пустым. Пожалуйста, введите имя.')
+            bot.register_next_step_handler(msg, edit_name, chat_id)
+        elif not name.replace(" ", "").isalpha() or '/start' in name:
+            msg = bot.send_message(chat_id=chat_id, text='Имя должно содержать только буквы и пробелы.')
+            bot.register_next_step_handler(msg, edit_name, chat_id)
         else:
             user.name = name
             user.is_checked = False

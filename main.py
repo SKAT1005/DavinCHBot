@@ -44,11 +44,22 @@ def get_photo_id(message):
     bot.send_message(user.chat_id, text='Отправляйте фотографии и получайте их ID')
 
 
+def send_account(user_chat_id):
+    markup = types.InlineKeyboardMarkup()
+    link = types.InlineKeyboardButton('Аккаунт пользователя', url=f'tg://user?id={user_chat_id}')
+    markup.add(link)
+    return markup
+
+
 @bot.message_handler(commands=['start'])
 def start(message):
-    # КUser.objects.all().delete()
     chat_id = message.chat.id
     user = User.objects.filter(chat_id=chat_id).first()
+    print(bot.get_me().username)
+    command = message.text.split()
+    if len(command) == 2 and len(command[1].split('_')) == 2 and command[1].split('_')[0] == 'ancete':
+        bot.send_message(chat_id=chat_id, text='Ссылка на пользователя',
+                         reply_markup=send_account(command[1].split('_')[1]))
     if not user:
         time.sleep(random.uniform(0.1, 1))
         bot.clear_step_handler_by_chat_id(chat_id=chat_id)
@@ -94,6 +105,11 @@ def callback(call):
     message_id = call.message.id
     chat_id = call.message.chat.id
     user = User.objects.filter(chat_id=call.from_user.id)
+    username = call.message.from_user.username
+    user = user[0]
+    if username != user.username:
+        user.username = username
+        user.save(update_fields=['username'])
     if not user:
         try:
             bot.delete_message(chat_id=chat_id, message_id=message_id)
@@ -103,10 +119,9 @@ def callback(call):
         bot.clear_step_handler_by_chat_id(chat_id=chat_id)
         msg = bot.send_message(chat_id=chat_id, text='Укажи свое имя', reply_markup=None)
         bot.register_next_step_handler(msg, enter_name, chat_id)
-    elif user[0].is_ban:
+    elif user.is_ban:
         bot.send_message(chat_id=chat_id, text='Вы забанены')
     else:
-        user = user[0]
         # user.update_last_active()
         if call.message:
             bot.clear_step_handler_by_chat_id(chat_id=chat_id)

@@ -1,5 +1,4 @@
 import base64
-import datetime
 
 from django.contrib.auth.models import User as main_user
 from django.db import models
@@ -10,6 +9,7 @@ from const import bot
 class User(models.Model):
     chat_id = models.CharField(max_length=64, blank=True, null=True, verbose_name='Id чата в телеге')
     name = models.CharField(max_length=128, blank=True, null=True, verbose_name='Имя')
+    username = models.CharField(max_length=128, default='', blank=True, null=True, verbose_name='Ник пользователя')
     age = models.IntegerField(blank=True, null=True, verbose_name='Возраст')
     gender = models.CharField(max_length=16, blank=True, null=True, verbose_name='Гендер')
     category = models.CharField(max_length=32, blank=True, null=True, verbose_name='Для чего в боте')

@@ -1,7 +1,7 @@
 from dadata import Dadata
 
-token = "9e86fedde7090ce3eabe1fff3c90f6f67e2e140e"
-secret = "bf02a09cbfffdcb33d8803da3d07699715932d70"
+token = "60ebc12e8e86cdbf681068909af7c4777f2e43f4"
+secret = "384ff49232af89dcade540b8ee6aef5c1fce2da9"
 dadata = Dadata(token, secret)
 
 

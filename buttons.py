@@ -136,7 +136,7 @@ def answer_on_like(user_id):
 def send_link_on_chat(user_id):
     markup = types.InlineKeyboardMarkup(row_width=1)
     link = types.InlineKeyboardButton('Профиль пользователя', url=f'tg://user?id={user_id}')
-    menu = types.InlineKeyboardButton('В меню', callback_data='menu')
+    menu = types.InlineKeyboardButton('В меню', callback_data='menuAfterLike')
     markup.add(link, menu)
     return markup
 

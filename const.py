@@ -1,13 +1,15 @@
 import os
 
 import django
-from telebot import TeleBot
+from telebot import TeleBot, apihelper
 
 # os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'DavinCHBot.settings')
 # django.setup()
 # from django.contrib.auth.models import Group
 
-bot = TeleBot('7071542790:AAGLBF9X6V-PDSqcJAPXkfaHBvFR8haowu0')
+API_TOKEN = '7171194252:AAGyTNMYCDdA-Zb3jvz5qVCFS0Qfwaf_ieo'
+
+bot = TeleBot(API_TOKEN)
 
 simbols = '🤙👌🤘🤟✌️'
 

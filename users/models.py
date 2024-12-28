@@ -23,7 +23,7 @@ class User(models.Model):
     find_gender = models.CharField(max_length=16, blank=True, null=True, verbose_name='Какой гендер ищет')
     latitude = models.FloatField(default=1, verbose_name='Широта')
     longitude = models.FloatField(default=1, verbose_name='Долгота')
-    active = models.BooleanField(default=True, verbose_name='Активен ли поиск')
+    active = models.BooleanField(default=False, verbose_name='Активен ли поиск')
     registration_date = models.DateTimeField(auto_now_add=True, verbose_name='Дата регистрации')
     like_users = models.ManyToManyField('LikeUsers', blank=True,
                                         verbose_name='Пользователи, которые лайкнули анкету')
@@ -31,6 +31,7 @@ class User(models.Model):
     last_ad_time = models.DateTimeField(default=None, null=True, verbose_name='Время просмотра последней рекламы')
     last_like = models.DateTimeField(default=None, null=True, verbose_name='Время последней отправки сообщения о лайках')
     is_checked = models.BooleanField(default=False, verbose_name='Проеверен ли аккаунт')
+    is_fake = models.BooleanField(default=False, verbose_name='Фейковая ли анкета?')
     is_admin = models.BooleanField(default=False, verbose_name='Является ли пользователь админом')
     is_ban = models.BooleanField(default=False, verbose_name='В бане ли аккаунт')
     add_photo = models.CharField(max_length=16, default='step 1', verbose_name='Добавляют ли фото')

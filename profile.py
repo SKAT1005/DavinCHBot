@@ -22,11 +22,13 @@ def edit_photo(message, chat_id, user, number):
         avatar_id = f'photo {message.photo[-1].file_id}'
         if number == '1':
             avatar = user.avatars.all()[0]
+            avatar.base64_file = None
             avatar.file_id = avatar_id
             avatar.save()
         else:
             try:
                 avatar = user.avatars.all()[int(number) - 1]
+                avatar.base64_file = None
                 avatar.file_id = avatar_id
                 avatar.save()
             except Exception:
@@ -37,11 +39,13 @@ def edit_photo(message, chat_id, user, number):
         avatar_id = f'video {message.video.file_id}'
         if number == '1':
             avatar = user.avatars.all()[0]
+            avatar.base64_file = None
             avatar.file_id = avatar_id
             avatar.save()
         else:
             try:
                 avatar = user.avatars.all()[int(number) - 1]
+                avatar.base64_file = None
                 avatar.file_id = avatar_id
                 avatar.save()
             except Exception:
@@ -66,8 +70,7 @@ def edit_city(message, chat_id, user):
             user.city = city
             user.latitude = latitude
             user.longitude = longitude
-            user.is_checked = False
-            user.save(update_fields=['city', 'latitude', 'longitude', 'is_checked'])
+            user.save(update_fields=['city', 'latitude', 'longitude'])
             profile_menu(chat_id=chat_id, user=user)
     elif message.content_type == 'location':
         latitude = float(message.location.latitude)
@@ -81,8 +84,7 @@ def edit_city(message, chat_id, user):
             user.city = city
             user.latitude = latitude
             user.longitude = longitude
-            user.is_checked = False
-            user.save(update_fields=['city', 'latitude', 'longitude', 'is_checked'])
+            user.save(update_fields=['city', 'latitude', 'longitude'])
             profile_menu(chat_id=chat_id, user=user)
     else:
         msg = bot.send_message(chat_id=chat_id,
@@ -261,12 +263,9 @@ def callback(data, chat_id, user):
         user.delete()
         bot.send_message(chat_id=chat_id, text='Твоя анкета удалена', reply_markup=buttons.create())
     elif data[0] == 'verefi':
-        simbol = random.choice(simbols)
-        while not simbol:
-            simbol = random.choice(['🤙', '👌', '🤘','🤟'])
-        text = f'Для подтверждения сделай селфи со следующим символом: {simbol}'
+        text = random.choice(['Для подтверждения сделай селфи со следующим символом: 🤚', 'Для подтверждения сделай селфи со следующим символом: 🤙', 'Для подтверждения сделай селфи со следующим символом: 👍', 'Для подтверждения сделай селфи со следующим символом: 🤟'])
         msg = bot.send_message(chat_id=chat_id, text=text, reply_markup=buttons.go_back('menu'))
-        bot.register_next_step_handler(msg, verefi, chat_id, user, simbol)
+        bot.register_next_step_handler(msg, verefi, chat_id, user, text[-2:])
     elif data[0] == 'name':
         msg = bot.send_message(chat_id=chat_id, text='Как тебя зовут?', reply_markup=buttons.go_back('edit_profile'))
         bot.register_next_step_handler(msg, edit_name, chat_id, user)

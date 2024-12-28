@@ -3,21 +3,27 @@ import random
 
 from django.contrib import messages
 from django.contrib.auth import authenticate, login
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.db.models import Q, Count
 from django.shortcuts import render, HttpResponseRedirect, redirect
 from django.utils import timezone
 from django.views import View
+from telebot import types
 
 from buttons import questionnaire_menu
 from const import bot
 from coord import get_coord_by_name
 from users.models import User, Report, Ad, Photo, Logs
 
+
 def create_logs(user, action):
     Logs.objects.create(user=user, type=action, time=timezone.now())
+
+
 def user_view(request):
     if not request.user.is_authenticated:
         return HttpResponseRedirect('/')
+
     if request.method == 'GET':
         filter = Q()
         sorting = request.GET.get('sorting')
@@ -26,6 +32,12 @@ def user_view(request):
         city = request.GET.get('city')
         category = request.GET.get('category')
         description = request.GET.get('description')
+        is_fake = request.GET.get('is_fake')
+
+        if is_fake == 'on':
+            filter &= Q(is_fake=True)
+        else:
+            filter &= Q(is_fake=False)
 
         # Обработка возраста
         try:
@@ -56,10 +68,32 @@ def user_view(request):
         if sorting:
             users = users.order_by(sorting)
 
-            # Получение уникальных городов
+        # Пагинация
+        paginator = Paginator(users, 1)  # Показываем по 10 пользователей на странице
+        page = request.GET.get('page')
+
+        try:
+            users_page = paginator.page(page)
+        except PageNotAnInteger:
+            # Если параметр 'page' не является целым числом, отображаем первую страницу
+            users_page = paginator.page(1)
+        except EmptyPage:
+            # Если страница вне диапазона, показываем последнюю страницу
+            users_page = paginator.page(paginator.num_pages)
+
+        # Получение уникальных городов
         unique_cities = User.objects.values_list('city', flat=True).distinct()
 
-        return render(request, 'user_list.html', {'users': users, 'citys': unique_cities})
+        # Составляем URL для пагинации с сохранением фильтров
+        page_url = request.GET.copy()  # Создаем копию GET параметров
+        page_url.pop('page', None)  # Удаляем параметр 'page' из GET (он будет добавлен в пагинации)
+
+        return render(request, 'user_list.html', {
+            'users': users_page,
+            'citys': unique_cities,
+            'page_obj': users_page,
+            'filters': page_url,  # Передаем фильтры в шаблон
+        })
 
 
 def delete_profile(request, pk):
@@ -119,9 +153,27 @@ class EditProfile(View):
         try:
             user = User.objects.get(id=pk)
             create_logs(request.user, f'Изменение профиля {user.chat_id}')
+            name = request.POST.get('name')
+            gender = request.POST.get('gender')
+            seeking = request.POST.get('seeking')
+            age = request.POST.get('age')
+            city = request.POST.get('city')
+            category = request.POST.get('category')
             description = request.POST.get('description')
+            city, latitude, longitude = get_coord_by_name(city)
+
+            user.name = name
+            user.gender = gender
+            user.find_gender = seeking
+            user.age = age
+            user.city = city
+            user.latitude = latitude
+            user.longitude = longitude
+            user.category = category
             user.description = description
-            user.save(update_fields=['description'])
+            user.save(
+                update_fields=['name', 'gender', 'find_gender', 'age', 'city', 'category', 'description', 'latitude',
+                               'longitude'])
             return render(request, 'edit_profile.html', context={'user': user})
         except Exception:
             return HttpResponseRedirect('/profiles')
@@ -189,7 +241,10 @@ def cansel_verefi(request, pk):
     try:
         user = User.objects.get(id=pk)
         create_logs(request.user, f'отказ верефикации профиля {user.chat_id}')
-        bot.send_message(chat_id=user.chat_id, text='Вам отказана верификация')
+        try:
+            bot.send_message(chat_id=user.chat_id, text='Вам отказана верификация')
+        except Exception:
+            pass
         user.is_checked = False
         user.need_verefi = False
         user.check_photo = None
@@ -323,6 +378,8 @@ def create_account(request, name, gender, seeking, age, city, category, descript
             category=category,
             description=description,
             find_age=find_age,
+            active=True,
+            is_fake=True,
             find_gender=seeking,
             longitude=longitude,
             latitude=latitude,
@@ -389,3 +446,34 @@ def login_view(request):
         else:
             messages.error(request, 'Неверные имя пользователя или пароль.')
     return render(request, 'login.html')
+
+def add_media(medias, avatar_data, text=None):
+    medias.append(types.InputMediaPhoto(media=avatar_data, caption=text))
+    return medias
+
+def mailing(request):
+    if not request.user.is_authenticated:
+        return HttpResponseRedirect('/')
+    elif not request.user.groups.filter(name='создание рассылок'):
+        return HttpResponseRedirect('/profiles')
+    if request.method == 'POST':
+        create_logs(request.user, f'Создание рассылки')
+        photo1 = request.FILES.get('image1')
+        photo2 = request.FILES.get('image2')
+        photo3 = request.FILES.get('image3')
+        text = request.POST.get('text')
+        medias = []
+        if photo1:
+            medias = add_media(medias, photo1, text)
+        if photo2:
+            medias = add_media(medias, photo2)
+        if photo3:
+            medias = add_media(medias, photo3)
+        for user in User.objects.all():
+            try:
+                bot.send_media_group(user.chat_id, medias)
+            except Exception as e:
+                pass
+        return HttpResponseRedirect('/mailing')
+    else:
+        return render(request, 'mailing.html')

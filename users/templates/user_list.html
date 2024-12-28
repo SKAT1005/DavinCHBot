@@ -10,6 +10,7 @@
             margin: 0;
             padding: 0;
         }
+
         .create-ad-button {
             float: right;
             padding: 10px 20px;
@@ -148,20 +149,47 @@
         .user-card button:hover {
             background-color: #ddd;
         }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .pagination a {
+            padding: 8px 15px;
+            margin: 0 5px;
+            text-decoration: none;
+            background-color: #f0f0f0;
+            border-radius: 5px;
+            color: #333;
+        }
+
+        .pagination a:hover {
+            background-color: #ddd;
+        }
+
+        .pagination .current-page {
+            font-weight: bold;
+            background-color: #4CAF50;
+            color: white;
+        }
+
     </style>
 </head>
 <body>
 <div class="container">
     <div class="sidebar">
-            <ul>
-                <li><a href="{% url 'user_list'%}">Список пользователей</a></li>
-                <li><a href="{% url 'report'%}">Жалобы</a></li>
-                <li><a href="{% url 'verefi'%}">Верификация пользователей</a></li>
-                <li><a href="{% url 'ad_list'%}">Управление рекламой</a></li>
-                <li><a href="{% url 'stat'%}">Статистика</a></li>
-                <li><a href="{% url 'admin:index'%}">Главная админ-панель</a></li>
-            </ul>
-        </div>
+        <ul>
+            <li><a href="{% url 'user_list' %}">Список пользователей</a></li>
+            <li><a href="{% url 'report' %}">Жалобы</a></li>
+            <li><a href="{% url 'verefi' %}">Верификация пользователей</a></li>
+            <li><a href="{% url 'ad_list' %}">Управление рекламой</a></li>
+            <li><a href="{% url 'stat' %}">Статистика</a></li>
+            <li><a href="{% url 'mailing'%}">Рассылка</a></li>
+            <li><a href="{% url 'admin:index' %}">Главная админ-панель</a></li>
+        </ul>
+    </div>
 
     <div class="main-content">
         <form method="get">
@@ -172,7 +200,7 @@
                         <option value="last_active">Сортировка по активности ↑</option>
                         <option value="-last_active">Сортировка по активности ↓</option>
                         <option value="registration_date">Сортировка по дате регистрации ↑</option>
-                        <option value="registration_date">Сортировка по дате регистрации ↓</option>
+                        <option value="-registration_date">Сортировка по дате регистрации ↓</option>
                         <option value="like_users_count">Сортировка по кол-ву мэтчей ↑</option>
                         <option value="-like_users_count">Сортировка по кол-ву мэтчей ↓</option>
                     </select>
@@ -180,6 +208,7 @@
                 <div class="filters">
                     <p>Возраст </p>
                     <input type="text" id="age" name="age" placeholder="18-25">
+                    <p>Показывать фейки</p><input type="checkbox" name="is_fake">
                     <select id="gender" name="gender">
                         <option value="">Пол</option>
                         <option value="мужской">Мужской</option>
@@ -187,10 +216,9 @@
                     </select>
                     <select id="city" name="city">
                         <option value="">Город</option>
-                        {%for city in citys %}
-                        <option value={{city}}>{{city}}</option>
-                        {%endfor%}
-
+                        {% for city in citys %}
+                            <option value={{ city }}>{{ city }}</option>
+                        {% endfor %}
                     </select>
                     <select id="category" name="category">
                         <option value="">Категория</option>
@@ -210,48 +238,68 @@
                 <button type="submit">Применить фильтры</button>
             </div>
         </form>
-        <a href="{% url 'create_ancete'%}">
-                <button  class="create-ad-button">Создать анкету</button>
-                </a>
+        <a href="{% url 'create_ancete' %}">
+            <button class="create-ad-button">Создать анкету</button>
+        </a>
         <div class="user-list">
-
-            {%for user in users%}
-            <div class="user-card">
-                <div class="user-images">
-                    {%for file in user.avatars.all%}
-                    {% if file.get_type == 'photo' %}
-                    <img src="data:image/png;base64,{{file.get_data}}" alt="Фото 1">
-                    {%else%}
-                    <video controls>
-                        <source src="data:video/mp4;base64,{{file.get_data}}" type="video/mp4">
-                        Твой браузер не поддерживает загрузку видео.
-                    </video>
-                    {%endif%}
-                    {%endfor%}
+            {% for user in users %}
+                <div class="user-card">
+                    <div class="user-images">
+                        {% for file in user.avatars.all %}
+                            {% if file.get_type == 'photo' %}
+                                <img src="data:image/png;base64,{{ file.get_data }}" alt="Фото 1">
+                            {% else %}
+                                <video controls>
+                                    <source src="data:video/mp4;base64,{{ file.get_data }}" type="video/mp4">
+                                    Твой браузер не поддерживает загрузку видео.
+                                </video>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    <div class="user-info">
+                        <p>Имя пользователя: {{ user.name }}</p>
+                        <p>Пол пользователя: {{ user.gender }}</p>
+                        <p>Возраст пользователя: {{ user.age }} лет</p>
+                        <p>Город пользователя: {{ user.city }}</p>
+                        <p>Категория: {{ user.category }}</p>
+                        <p>Описание: {{ user.description }}</p>
+                        <p>Активен ли пользователь: {% if user.active %}Да{% else %}Нет{% endif %}</p>
+                        <p>Мэтчи: {{ user.like_users.all.count }}</p>
+                        <p>Верификация: {{ user.check_verefi }}</p>
+                        <p>Статус: {{ user.check_ban }}</p>
+                    </div>
+                    <div class="user-actions">
+                        <a href="{% url 'ban_profile' user.id %}">
+                            <button>Забанить/разбанить</button>
+                        </a>
+                        <a href="{% url 'edit_profile' user.id %}">
+                            <button>Редактировать анкету</button>
+                        </a>
+                        <a href="{% url 'delete_profile' user.id %}">
+                            <button>Удалить анкету</button>
+                        </a>
+                        <a href="https://web.telegram.org/k/#{{ user.chat_id }}">
+                            <button>Посмотреть аккаунт пользователя</button>
+                        </a>
+                    </div>
                 </div>
-                <div class="user-info">
-                    <p>Имя пользователя: {{user.name}}</p>
-                    <p>{{user.age}} лет, {{user.city}}</p>
-                    <p>Категория: {{user.category}}</p>
-                    <p>Описание: {{user.description}}</p>
-                    <p>Мэтчи: {{user.like_users.all.count}}</p>
-                    <p>Верефикация: {{user.check_verefi}}</p>
-                    <p>Статус: {{user.check_ban}}</p>
-                </div>
-                <div class="user-actions">
-                    <a href="{% url 'ban_profile' user.id%}">
-                        <button>Забанить/разбанить</button>
-                    </a>
-                    <a href="{% url 'edit_profile' user.id%}">
-                        <button>Редактировать анкету</button>
-                    </a>
-                    <a href="{% url 'delete_profile' user.id%}">
-                        <button>Удалить анкету</button>
-                    </a>
-                </div>
-            </div>
-            {% endfor%}
+            {% endfor %}
         </div>
+
+        <!-- Пагинация -->
+        <div class="pagination">
+    {% if page_obj.has_previous %}
+        <a href="?page=1{% for key, value in filters.items %}&{{ key }}={{ value }}{% endfor %}">&laquo; Первая</a>
+        <a href="?page={{ page_obj.previous_page_number }}{% for key, value in filters.items %}&{{ key }}={{ value }}{% endfor %}">Предыдущая</a>
+    {% endif %}
+
+    <span class="current-page">Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}</span>
+
+    {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}{% for key, value in filters.items %}&{{ key }}={{ value }}{% endfor %}">Следующая</a>
+        <a href="?page={{ page_obj.paginator.num_pages }}{% for key, value in filters.items %}&{{ key }}={{ value }}{% endfor %}">Последняя &raquo;</a>
+    {% endif %}
+</div>
     </div>
 </div>
 </body>

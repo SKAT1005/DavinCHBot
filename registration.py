@@ -251,7 +251,7 @@ def enter_gender(message, chat_id, name, age):
 
 def enter_age(message, chat_id, name):
     if message.content_type != 'text':
-        msg = bot.send_message(chat_id=chat_id, text='Напиши свой возраст.')
+        msg = bot.send_message(chat_id=chat_id, text='Напиши свой возраст')
         bot.register_next_step_handler(msg, enter_age, chat_id, name)
     else:
         try:
@@ -262,14 +262,14 @@ def enter_age(message, chat_id, name):
             msg = bot.send_message(chat_id=chat_id, text='Введи число, которое больше 15 и меньше 100')
             bot.register_next_step_handler(msg, enter_age, chat_id, name)
         else:
-            msg = bot.send_message(chat_id=chat_id, text='Выбери пол.', reply_markup=buttons.gender())
+            msg = bot.send_message(chat_id=chat_id, text='Выбери пол', reply_markup=buttons.gender())
             bot.register_next_step_handler(msg, enter_gender, chat_id, name, age)
 
 
 def enter_name(message, chat_id):
     bot.clear_step_handler_by_chat_id(chat_id=chat_id)
     if message.content_type != 'text':
-        msg = bot.send_message(chat_id=chat_id, text='Укажи своё имя.')
+        msg = bot.send_message(chat_id=chat_id, text='Укажи своё имя')
         bot.register_next_step_handler(msg, enter_name, chat_id)
     else:
         name = message.text
@@ -277,6 +277,12 @@ def enter_name(message, chat_id):
         if ln > 100:
             msg = bot.send_message(chat_id=chat_id, text='Максимальная длина имени 100 символов')
             bot.register_next_step_handler(msg, enter_name, chat_id)
+        elif ln == 0:
+            msg = bot.send_message(chat_id=chat_id, text='Имя не может быть пустым. Пожалуйста, введите имя.')
+            bot.register_next_step_handler(msg, enter_name, chat_id)
+        elif not name.replace(" ", "").isalpha():
+            msg = bot.send_message(chat_id=chat_id, text='Имя должно содержать только буквы и пробелы.')
+            bot.register_next_step_handler(msg, enter_name, chat_id)
         else:
-            msg = bot.send_message(chat_id=chat_id, text='Напиши свой возраст.')
+            msg = bot.send_message(chat_id=chat_id, text='Напиши свой возраст')
             bot.register_next_step_handler(msg, enter_age, chat_id, name)

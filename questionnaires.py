@@ -46,19 +46,22 @@ def get_user(user):
         category = ['Серьёзные отношения💞', 'Свободные отношения❤️‍🔥', 'Дружба🫡', 'Не определился🫠']
     if find_gender[0] == 'любой':
         find_gender = ['мужской', 'женский']
-    users = User.objects.filter(age__in=age, gender__in=find_gender, category__in=category, active=True)
+    if user.gender == 'мужской':
+        user_find_gender = ['мужской', 'любой']
+    else:
+        user_find_gender = ['женский', 'любой']
+    users = User.objects.filter(age__in=age, gender__in=find_gender, category__in=category, active=True,
+                                find_gender__in=user_find_gender)
     for usr in users:
-        if not Status.objects.filter(to_user=usr, form_user=user) and usr != user:
-            if is_point_in_circle(latitude=usr.latitude, longitude=usr.longitude, circle_center_latitude=user.latitude,
-                                  circle_center_longitude=user.longitude):
-                return usr
-    users = User.objects.filter(age__in=age, gender__in=find_gender, active=True)
-    for usr in users:
-        if not Status.objects.filter(to_user=usr, form_user=user) and usr != user:
-            if is_point_in_circle(latitude=usr.latitude, longitude=usr.longitude, circle_center_latitude=user.latitude,
-                                  circle_center_longitude=user.longitude):
-                return usr
+        find_age = list(map(int, usr.find_age.split('-')))
+        if find_age[0] <= user.age <= find_age[1]:
+            if not Status.objects.filter(to_user=usr, form_user=user) and usr != user:
+                if is_point_in_circle(latitude=usr.latitude, longitude=usr.longitude,
+                                      circle_center_latitude=user.latitude,
+                                      circle_center_longitude=user.longitude):
+                    return usr
     return None
+
 
 def send_ad_photo(ad):
     medias = []
@@ -69,9 +72,11 @@ def send_ad_photo(ad):
     if ad.photo3:
         medias.append(types.InputMediaPhoto(media=ad.photo3))
     return medias
+
+
 def send_questionnaires(chat_id, user):
     n = True
-    if random.randint(1, 100) <= 200 and ( not user.last_ad_time or user.last_ad_time.timestamp() < (
+    if random.randint(1, 100) <= 200 and (not user.last_ad_time or user.last_ad_time.timestamp() < (
             timezone.now() - datetime.timedelta(hours=1)).timestamp()):
         try:
             ad = random.choice(Ad.objects.filter(is_active=True))
@@ -120,7 +125,8 @@ def send_profile(chat_id, user, markup):
 
 
 def send_message_to_questionnaire(questionnaire):
-    if questionnaire.last_like.timestamp() <= (timezone.now() - datetime.timedelta(minutes=5)).timestamp():
+    if not questionnaire.last_like or (
+            questionnaire.last_like.timestamp() <= (timezone.now() - datetime.timedelta(minutes=5)).timestamp()):
         text = f'Твоя заявка понравилась {questionnaire.like_users.all().count()} людям'
         bot.send_message(chat_id=questionnaire.chat_id, text=text, reply_markup=buttons.watch_like())
         questionnaire.update_last_like()
@@ -219,6 +225,15 @@ def add_answer(user_id, to_user):
     )
 
 
+def answer_dislike(chat_id, user_id):
+    questionnaire = User.objects.get(chat_id=chat_id)
+    user = User.objects.get(chat_id=user_id)
+    for i in questionnaire.like_users.all():
+        if i.send_like == user:
+            i.delete()
+    watch_like(questionnaire_chat_id=chat_id, questionnaire=questionnaire)
+
+
 def callback(data, chat_id, user):
     if len(data) == 0:
         send_questionnaires(chat_id=chat_id, user=user)
@@ -238,9 +253,9 @@ def callback(data, chat_id, user):
     elif data[0] == 'answer_like':
         add_action('лайк', user, data[1])
         answer_like(chat_id=chat_id, user_id=data[1])
-    elif data[0] == 'answer_like':
+    elif data[0] == 'answer_dislike':
         add_action('дизлайк', user, data[1])
-        watch_like(questionnaire_chat_id=chat_id, questionnaire=user)
+        answer_dislike(chat_id=chat_id, user_id=data[1])
     elif data[0] == 'report':
         add_action('жалоба', user, data[1])
         msg = bot.send_message(chat_id=chat_id, text='Опиши причину твоей жалобы')

@@ -1,7 +1,7 @@
 from django.urls import path
 
 from .views import user_view, delete_profile, ban_profile, EditProfile, stat, verefi, acept_verefi, cansel_verefi, \
-    cansel_report, report, ad_list, create_ad, delete_ad, deactivate_ad, create_ancete, login_view
+    cansel_report, report, ad_list, create_ad, delete_ad, deactivate_ad, create_ancete, login_view, mailing
 
 urlpatterns = [
     path('', login_view, name='login'),
@@ -20,5 +20,6 @@ urlpatterns = [
     path('ad/create', create_ad, name="create_ad"),
     path('ad/delete/<int:pk>', delete_ad, name="delete_ad"),
     path('ad/deactivate/<int:pk>', deactivate_ad, name="deactivate_ad"),
+    path('mailing', mailing, name="mailing"),
 
 ]

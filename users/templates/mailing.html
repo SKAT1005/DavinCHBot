@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Рассылка</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            display: flex;
+        }
+
+        .sidebar {
+            width: 200px;
+            background-color: #f0f0f0;
+            padding: 20px;
+        }
+
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .sidebar li {
+            margin-bottom: 10px;
+        }
+
+        .sidebar a {
+            display: block;
+            padding: 10px;
+            text-decoration: none;
+            color: #333;
+            border-radius: 5px;
+            background-color: #fff;
+            transition: background-color 0.3s ease;
+        }
+
+        .sidebar a:hover {
+            background-color: #ddd;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 20px;
+        }
+
+        .form-container {
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+
+        .form-button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .form-button:hover {
+            background-color: #45a049;
+        }
+
+        /* Специальные стили для изображения */
+        .form-input[type="file"] {
+            display: none;
+        }
+
+        .upload-button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background-color: #f0f0f0;
+            color: #333;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .upload-button:hover {
+            background-color: #ddd;
+        }
+
+        .preview-image {
+            width: 200px;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="sidebar">
+        <ul>
+            <li><a href="{% url 'user_list' %}">Список пользователей</a></li>
+            <li><a href="{% url 'report' %}">Жалобы</a></li>
+            <li><a href="{% url 'verefi' %}">Верификация пользователей</a></li>
+            <li><a href="{% url 'ad_list' %}">Управление рекламой</a></li>
+            <li><a href="{% url 'stat' %}">Статистика</a></li>
+            <li><a href="{% url 'mailing'%}">Рассылка</a></li>
+            <li><a href="{% url 'admin:index' %}">Главная админ-панель</a></li>
+        </ul>
+    </div>
+
+    <div class="main-content">
+        <div class="form-container">
+            <h2>Создание рекламы</h2>
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <label for="image1" class="form-label">Фотография 1:</label>
+                <input type="file" id="image1" name="image1" accept="image/*" class="form-input">
+                <button type="button" class="upload-button" onclick="document.getElementById('image1').click();">
+                    Загрузить
+                </button>
+                <img src="#" alt="Предпросмотр изображения 1" class="preview-image" id="preview-image1">
+
+                <label for="image2" class="form-label">Фотография 2:</label>
+                <input type="file" id="image2" name="image2" accept="image/*" class="form-input">
+                <button type="button" class="upload-button" onclick="document.getElementById('image2').click();">
+                    Загрузить
+                </button>
+                <img src="#" alt="Предпросмотр изображения 2" class="preview-image" id="preview-image2">
+
+                <label for="image3" class="form-label">Фотография 3:</label>
+                <input type="file" id="image3" name="image3" accept="image/*" class="form-input">
+                <button type="button" class="upload-button" onclick="document.getElementById('image3').click();">
+                    Загрузить
+                </button>
+                <img src="#" alt="Предпросмотр изображения 3" class="preview-image" id="preview-image3">
+
+                <label for="text" class="form-label">Текст рассылки:</label>
+                <textarea id="text" name="text" class="form-input" rows="5"></textarea>
+
+                <button type="submit" class="form-button">Отправить рассылку</button>
+            </form>
+            {% if messages %}
+                <ul class="messages">
+                    {% for message in messages %}
+                        <li>{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+    function handleImagePreview(inputId) {
+        const input = document.getElementById(inputId);
+        const preview = document.getElementById(`preview-${inputId}`);
+
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                preview.src = e.target.result;
+            }
+            reader.readAsDataURL(input.files[0]);
+        } else {
+            preview.src = '#';
+        }
+    }
+
+    const image1 = document.getElementById('image1');
+    const image2 = document.getElementById('image2');
+    const image3 = document.getElementById('image3');
+
+    image1.addEventListener('change', function () {
+        handleImagePreview('image1');
+    });
+
+    image2.addEventListener('change', function () {
+        handleImagePreview('image2');
+    });
+
+    image3.addEventListener('change', function () {
+        handleImagePreview('image3');
+    });
+</script>
+</body>
+</html>

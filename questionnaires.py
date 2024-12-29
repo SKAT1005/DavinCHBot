@@ -46,11 +46,18 @@ def get_user(user):
         category = ['Серьёзные отношения💞', 'Свободные отношения❤️‍🔥', 'Дружба🫡', 'Не определился🫠']
     if find_gender[0] == 'любой':
         find_gender = ['мужской', 'женский']
-    if user.gender == 'мужской':
-        user_find_gender = ['мужской', 'любой']
-    else:
-        user_find_gender = ['женский', 'любой']
+    user_find_gender = [user.gender, 'любой']
     users = User.objects.filter(age__in=age, gender__in=find_gender, category__in=category, active=True,
+                                find_gender__in=user_find_gender)
+    for usr in users:
+        find_age = list(map(int, usr.find_age.split('-')))
+        if find_age[0] <= user.age <= find_age[1]:
+            if not Status.objects.filter(to_user=usr, form_user=user) and usr != user:
+                if is_point_in_circle(latitude=usr.latitude, longitude=usr.longitude,
+                                      circle_center_latitude=user.latitude,
+                                      circle_center_longitude=user.longitude):
+                    return usr
+    users = User.objects.filter(age__in=age, gender__in=find_gender, active=True,
                                 find_gender__in=user_find_gender)
     for usr in users:
         find_age = list(map(int, usr.find_age.split('-')))

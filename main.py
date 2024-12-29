@@ -104,12 +104,8 @@ def answer_on_message(message):
 def callback(call):
     message_id = call.message.id
     chat_id = call.message.chat.id
-    user = User.objects.filter(chat_id=call.from_user.id)
+    user = User.objects.filter(chat_id=call.from_user.id).first()
     username = call.message.from_user.username
-    user = user[0]
-    if username != user.username:
-        user.username = username
-        user.save(update_fields=['username'])
     if not user:
         try:
             bot.delete_message(chat_id=chat_id, message_id=message_id)
@@ -119,6 +115,9 @@ def callback(call):
         bot.clear_step_handler_by_chat_id(chat_id=chat_id)
         msg = bot.send_message(chat_id=chat_id, text='Укажи свое имя', reply_markup=None)
         bot.register_next_step_handler(msg, enter_name, chat_id)
+    elif username != user.username:
+        user.username = username
+        user.save(update_fields=['username'])
     elif user.is_ban:
         bot.send_message(chat_id=chat_id, text='Вы забанены')
     else:

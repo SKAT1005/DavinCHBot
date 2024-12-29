@@ -1,16 +1,22 @@
 from django.contrib import admin
-from .models import User, Report, Logs
+from .models import User, Report, Logs, LikeUsers
+
+
+@admin.register(LikeUsers)
+class LikeUsersAdmin(admin.ModelAdmin):
+    pass
 
 
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
     pass
 
+
 @admin.register(Logs)
 class LogsAdmin(admin.ModelAdmin):
     fields = ('time', 'type', 'user')
     list_display = ('id', 'user', 'type', 'time')
-    list_filter = ('user', )
+    list_filter = ('user',)
 
 
 @admin.register(Report)

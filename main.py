@@ -22,7 +22,7 @@ from registration import enter_name
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'DavinCHBot.settings')
 django.setup()
-from users.models import User, Status, Ad
+from users.models import User, Status, Ad, Links
 from django.contrib.auth.models import Group
 
 Group.objects.get_or_create(name='бан профиля')
@@ -53,13 +53,41 @@ def send_account(user_chat_id):
 
 @bot.message_handler(commands=['start'])
 def start(message):
+    txt = """
+    <b>1. Объединение стилей: Стили из обоих исходных файлов были объединены в один блок. Некоторые дублирующиеся стили, такие как font-family, margin, padding были перенесены в глобальные стили body и container.</b>
+<i>2. Применение стилей:
+   - Добавлены стили для textarea  height: 200px
+   - Добавлены стили для кнопок форматирования
+   - Обновлены стили для textarea</i>
+<u>3. Внедрение редактора: HTML-редактор был внедрен в форму, путем добавления textarea и кнопок для форматирования текста. Так же добавлено поле preview для просмотра</u>
+<strike>4. Изменение id: id textarea с htmlInput был изменен на text</strike>
+<span class="tg-spoiler">5. Адаптированный JS: JavaScript был адаптирован для работы с новым id textarea.</span>
+<a href="http://www.example.com/">6. Добавление type=button: для кнопок форматирования
+</a>
+<pre class="language-python">Особенности:
+
+•   Единый стиль: Весь код использует единый стиль оформления.
+•   Форматирование текста: Внедрены кнопки форматирования текста.
+•   Предварительный просмотр: Возможность предпросмотра введенного текста с HTML-тегами.
+•   Адаптация: JS-код адаптирован к новым id и классам элементов.
+•   Организация кода: Код разбит на логические блоки.
+</pre>
+<code>Теперь код имеет единый стиль, а функциональность редактора HTML-текста встроена в форму создания рекламы.</code>
+    """
     chat_id = message.chat.id
+    bot.send_message(chat_id=chat_id, text=txt, parse_mode='HTML')
     user = User.objects.filter(chat_id=chat_id).first()
-    print(bot.get_me().username)
     command = message.text.split()
     if len(command) == 2 and len(command[1].split('_')) == 2 and command[1].split('_')[0] == 'ancete':
         bot.send_message(chat_id=chat_id, text='Ссылка на пользователя',
                          reply_markup=send_account(command[1].split('_')[1]))
+    elif len(command) == 2 and len(command[1].split('_')) == 2 and command[1].split('_')[0] == 'link':
+        try:
+            link, _ = Links.objects.get_or_create(name=command[1].split('_')[1])
+        except Exception:
+            link = Links.objects.filter(name=command[1].split('_')[1]).first()
+        link.user_count += 1
+        link.save(update_fields=['user_count'])
     if not user:
         time.sleep(random.uniform(0.1, 1))
         bot.clear_step_handler_by_chat_id(chat_id=chat_id)
@@ -104,12 +132,8 @@ def answer_on_message(message):
 def callback(call):
     message_id = call.message.id
     chat_id = call.message.chat.id
-    user = User.objects.filter(chat_id=call.from_user.id)
+    user = User.objects.filter(chat_id=call.from_user.id).first()
     username = call.message.from_user.username
-    user = user[0]
-    if username != user.username:
-        user.username = username
-        user.save(update_fields=['username'])
     if not user:
         try:
             bot.delete_message(chat_id=chat_id, message_id=message_id)
@@ -119,6 +143,9 @@ def callback(call):
         bot.clear_step_handler_by_chat_id(chat_id=chat_id)
         msg = bot.send_message(chat_id=chat_id, text='Укажи свое имя', reply_markup=None)
         bot.register_next_step_handler(msg, enter_name, chat_id)
+    elif username != user.username:
+        user.username = username
+        user.save(update_fields=['username'])
     elif user.is_ban:
         bot.send_message(chat_id=chat_id, text='Вы забанены')
     else:
@@ -133,18 +160,13 @@ def callback(call):
                 return
 
             try:
-                quest = User.objects.get(chat_id=data[2])
-                for i in range(message_id - len(quest.avatars.all()[:3]), message_id + 1):
-                    try:
-                        bot.delete_message(chat_id=chat_id, message_id=i)
-                    except Exception:
-                        pass
+                message_ids = []
+                for i in range(user.delete_message + 1):
+                    message_ids.append(message_id - i)
+                for message_id in message_ids:
+                    bot.delete_message(chat_id=chat_id, message_id=message_id)
             except Exception:
-                for i in range(message_id - len(user.avatars.all()[:3]), message_id + 1):
-                    try:
-                        bot.delete_message(chat_id=chat_id, message_id=i)
-                    except Exception:
-                        pass
+                pass
             msg = bot.send_message(chat_id=chat_id, text='.', reply_markup=types.ReplyKeyboardRemove())
             bot.delete_message(chat_id=chat_id, message_id=msg.id)
             if data[0] == 'menu':

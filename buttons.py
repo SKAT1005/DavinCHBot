@@ -32,11 +32,13 @@ def skip():
     markup.add(skip)
     return markup
 
+
 def watch_photo():
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
     skip = types.KeyboardButton('Смотреть мои фотографии')
     markup.add(skip)
     return markup
+
 
 def find_age():
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
@@ -68,10 +70,11 @@ def check(id):
 def menu(user):
     markup = types.InlineKeyboardMarkup(row_width=1)
     watch = types.InlineKeyboardButton('Смотреть анкеты', callback_data='profiles')
-    create = types.InlineKeyboardButton(f'Мэтчи ({user.like_users.all().count()})', callback_data='profiles|watch_like')
-    edit_filter = types.InlineKeyboardButton('Настроить поиск', callback_data='filter')
-    verefi = types.InlineKeyboardButton('Подтверждение анкеты', callback_data='edit_profile|verefi')
-    edit_profile = types.InlineKeyboardButton('Настроить анкету', callback_data='edit_profile')
+    create = types.InlineKeyboardButton(f'Мэтчи ({user.like_users.all().count()}) ♥️',
+                                        callback_data='profiles|watch_like')
+    edit_filter = types.InlineKeyboardButton('Настроить поиск ⚙️', callback_data='filter')
+    verefi = types.InlineKeyboardButton('Подтверждение анкеты ✅', callback_data='edit_profile|verefi')
+    edit_profile = types.InlineKeyboardButton('Настроить анкету ⚙️', callback_data='edit_profile')
     markup.add(watch, create, edit_filter, verefi, edit_profile)
     return markup
 
@@ -98,7 +101,7 @@ def profile_menu():
     edit_age = types.InlineKeyboardButton('Изменить возраст', callback_data='edit_profile|age')
     go_sleep = types.InlineKeyboardButton('Выйти из поиска', callback_data='edit_profile|go_sleep')
     delite = types.InlineKeyboardButton('Удалить анкету', callback_data='edit_profile|delite')
-    menu = types.InlineKeyboardButton('Вернуться назад', callback_data='menu')
+    menu = types.InlineKeyboardButton('Вернуться назад ️️️⬅️', callback_data='menu')
     markup.add(edit_age, edit_name, edit_gender, edit_avatar, edit_city, edit_description, go_sleep, delite, menu)
     return markup
 
@@ -189,10 +192,20 @@ def watch_like():
     return markup
 
 
-
 def continue_watch():
     markup = types.InlineKeyboardMarkup(row_width=1)
     watch = types.InlineKeyboardButton('Смотреть анкеты', callback_data='profiles')
     menu = types.InlineKeyboardButton('В меню', callback_data='menu')
     markup.add(watch, menu)
+    return markup
+
+
+def report_type():
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True, row_width=1)
+    type1 = types.KeyboardButton('Нежелательный сексуальный контент🔞')
+    type2 = types.KeyboardButton('Скам, мошенничество')
+    type3 = types.KeyboardButton('Навязчивая реклама 🤬')
+    type4 = types.KeyboardButton('Оскорбление, буллинг⛔️')
+    type5 = types.KeyboardButton('Экстремизм, расизм🗿')
+    markup.add(type1, type2, type3, type4, type5)
     return markup

@@ -48,7 +48,14 @@
             flex: 1;
             padding: 20px;
         }
-
+        .toolbar {
+            margin-bottom: 10px;
+        }
+        button {
+            margin-right: 5px;
+            padding: 8px 12px;
+            cursor: pointer;
+        }
         .form-container {
             padding: 20px;
             border: 1px solid #ddd;
@@ -60,12 +67,16 @@
             margin-bottom: 5px;
         }
 
-        .form-input {
+        .form-input, textarea {
             width: 100%;
             padding: 10px;
             border: 1px solid #ddd;
             border-radius: 5px;
             margin-bottom: 15px;
+             box-sizing: border-box;
+        }
+        textarea {
+            height: 200px;
         }
 
         .form-button {
@@ -96,7 +107,6 @@
             cursor: pointer;
             transition: background-color 0.3s ease;
         }
-
         .upload-button:hover {
             background-color: #ddd;
         }
@@ -107,6 +117,23 @@
             object-fit: cover;
             border-radius: 5px;
             margin-bottom: 15px;
+        }
+         #preview {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-top: 10px;
+            white-space: pre-wrap;
+        }
+        .tg-spoiler {
+            background-color: #000;
+            color: #000;
+            cursor: pointer;
+        }
+        .tg-spoiler:hover {
+            color: #fff;
+        }
+        .tg-spoiler:active {
+            color: #fff;
         }
     </style>
 </head>
@@ -143,12 +170,29 @@
                     <input type="file" id="image3" name="image3" accept="image/*" class="form-input">
                     <button type="button" class="upload-button" onclick="document.getElementById('image3').click();">Загрузить</button>
                     <img src="#" alt="Предпросмотр изображения 3" class="preview-image" id="preview-image3">
-
-                    <label for="text" class="form-label">Текст рекламы:</label>
-                    <textarea id="text" name="text" class="form-input" rows="5"></textarea>
-
-                    <label for="deactivate_time" class="form-label">Через сколько часов реклама деактивируется:</label>
-                    <input type="number" id="deactivate_time" name="deactivate_time" class="form-input" min="1">
+                    <br>
+                    <label>Время начала показа(можно пропустить): <input type="datetime-local" name="start_time"/></label>
+                    <br>
+                    <label>Время конца показа(можно пропустить): <input type="datetime-local" name="end_time"/></label>
+                    <br>
+                    <label>Нужно количество показов(можно пропустить): <input type="number" name="max_view"></label>
+                    <br>
+                    <label>Шанс показа в процентах: <input type="number" name="chance" value="5"></label>
+                     <label for="text" class="form-label">Текст рекламы:</label>
+                     <div class="toolbar">
+                        <button type="button" onclick="formatText('b')"><b>Жирный</b> (b)</button>
+                        <button type="button" onclick="formatText('i')"><i>Курсив</i> (i)</button>
+                        <button type="button" onclick="formatText('u')"><u>Подчеркивание</u> (u)</button>
+                        <button type="button" onclick="formatText('s')"><s>Зачеркнуто</s> (s)</button>
+                        <button type="button" onclick="formatText('span', 'tg-spoiler')">скрытый текст (span)</button>
+                        <button type="button" onclick="formatText('a', 'href', 'http://www.example.com/')">URL-адрес (a)</button>
+                        <button type="button" onclick="formatText('code')"><code>Код</code> (code)</button>
+<button type="button" onclick="formatText('pre', 'class', 'language-python',  '  предварительно отформатированный блок кода фиксированной ширины, \n написанный на языке программирования Python')">Пред. код Python (pre)</button>
+                    </div>
+                     <textarea id="text" name="text" class="form-input"  placeholder="Введите текст здесь"></textarea>
+                    <button type="button" onclick="updatePreview()">Предпросмотр</button>
+                    <h2>Предпросмотр:</h2>
+                    <div id="preview"></div>
 
                     <button type="submit" class="form-button">Создать рекламу</button>
                 </form>
@@ -194,6 +238,71 @@
         image3.addEventListener('change', function() {
             handleImagePreview('image3');
         });
+
+        function formatText(tag, attrName = null, attrValue = null, content = null) {
+            const textarea = document.getElementById('text');
+            const selectionStart = textarea.selectionStart;
+            const selectionEnd = textarea.selectionEnd;
+            const selectedText = textarea.value.substring(selectionStart, selectionEnd);
+
+            let formattedText = "";
+
+            if (selectedText) {
+                if (attrName && attrValue) {
+                  if (tag === 'tg-emoji') {
+                       formattedText = `<${tag} ${attrName}="${attrValue}">${content}</${tag}>`
+                  } else{
+                      formattedText = `<${tag} ${attrName}="${attrValue}">${selectedText}</${tag}>`;
+                  }
+                }
+                else if (tag === 'span' && attrName === 'tg-spoiler')
+                {
+                  formattedText = `<${tag} class="${attrName}">${selectedText}</${tag}>`;
+                }
+                else{
+                    formattedText = `<${tag}>${selectedText}</${tag}>`;
+                }
+
+            } else {
+                  if (attrName && attrValue) {
+                       if (tag === 'tg-emoji') {
+                           formattedText = `<${tag} ${attrName}="${attrValue}">${content}</${tag}>`
+                       }
+                      else if (tag === 'pre' && attrName === 'class') {
+                          formattedText = `<${tag}><code class="${attrValue}"> ${content} </code></${tag}>`
+                      }
+                      else {
+                        formattedText = `<${tag} ${attrName}="${attrValue}"> </${tag}>`
+                      }
+                  }
+                  else if (tag === 'span' && attrName === 'tg-spoiler'){
+                       formattedText = `<${tag} class="${attrName}"> </${tag}>`
+                  }
+                  else{
+                      formattedText = `<${tag}></${tag}>`
+                  }
+
+            }
+            const textBefore = textarea.value.substring(0, selectionStart);
+            const textAfter = textarea.value.substring(selectionEnd);
+
+            textarea.value = textBefore + formattedText + textAfter;
+            const cursorPosition = selectionStart + formattedText.length;
+            textarea.focus();
+            textarea.setSelectionRange(cursorPosition, cursorPosition);
+        }
+         function updatePreview() {
+            const htmlInput = document.getElementById('text').value;
+             const previewDiv = document.getElementById('preview');
+             previewDiv.innerHTML = htmlInput;
+
+               const spoilers = previewDiv.querySelectorAll('.tg-spoiler');
+                spoilers.forEach(spoiler => {
+                    spoiler.addEventListener('click', function() {
+                    this.style.color = this.style.color === 'black' ? 'white' : 'black';
+                });
+                });
+        }
     </script>
 </body>
 </html>

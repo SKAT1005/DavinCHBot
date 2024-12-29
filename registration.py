@@ -99,7 +99,7 @@ def add_photo(chat_id, message):
         else:
             avatar_id = f'video {message.video.file_id}'
         # time.sleep(random.uniform(0.00001, 0.005))
-        user = User.objects.get(chat_id=chat_id)
+        user = User.objects.filter(chat_id=chat_id).first()
         avatar_count = user.avatars.all().count()
         if avatar_count < 2:
             avatar = Photo.objects.create(file_id=f'{avatar_id}')
@@ -115,7 +115,7 @@ def add_photo(chat_id, message):
             photo(chat_id=chat_id, user=user)
 
     else:
-        user = User.objects.get(chat_id=chat_id)
+        user = User.objects.filter(chat_id=chat_id).first()
         count_avatars = user.avatars.all().count()
         if count_avatars and content_type == 'text' and message.text == 'Смотреть мои фотографии':
             user.add_photo = 'step 2'

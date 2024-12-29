@@ -149,7 +149,7 @@
             <li><a href="{% url 'verefi' %}">Верификация пользователей</a></li>
             <li><a href="{% url 'ad_list' %}">Управление рекламой</a></li>
             <li><a href="{% url 'stat' %}">Статистика</a></li>
-            <li><a href="{% url 'mailing'%}">Рассылка</a></li>
+            <li><a href="{% url 'mailing' %}">Рассылка</a></li>
             <li><a href="{% url 'admin:index' %}">Главная админ-панель</a></li>
         </ul>
     </div>
@@ -157,21 +157,21 @@
     <div class="main-content">
         <div class="user-list">
             {% for report in reports %}
-            <div class="user-card">
-                <div class="user-images">
-                    {%for file in report.user.avatars.all%}
-                    {% if file.get_type == 'photo' %}
-                    <img src="data:image/png;base64,{{file.get_data}}" alt="Фото профиля">
-                    {%else%}
-                    <video controls>
-                        <source src="data:video/mp4;base64,{{file.get_data}}" type="video/mp4">
-                        Твой браузер не поддерживает загрузку видео.
-                    </video>
-                    {%endif%}
-                    {%endfor%}
-                </div>
-                <div class="user-info">
-                    <p>Имя пользователя: {{ report.user.name }}</p>
+                <div class="user-card">
+                    <div class="user-images">
+                        {% for file in report.user.avatars.all %}
+                            {% if file.get_type == 'photo' %}
+                                <img src="data:image/png;base64,{{ file.get_data }}" alt="Фото профиля">
+                            {% else %}
+                                <video controls>
+                                    <source src="data:video/mp4;base64,{{ file.get_data }}" type="video/mp4">
+                                    Твой браузер не поддерживает загрузку видео.
+                                </video>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    <div class="user-info">
+                        <p>Имя пользователя: {{ report.user.name }}</p>
                         <p>Пол пользователя: {{ report.user.gender }}</p>
                         <p>Возраст пользователя: {{ report.user.age }} лет</p>
                         <p>Город пользователя: {{ report.user.city }}</p>
@@ -181,23 +181,28 @@
                         <p>Мэтчи: {{ report.user.like_users.all.count }}</p>
                         <p>Верификация: {{ report.user.check_verefi }}</p>
                         <p>Статус: {{ report.user.check_ban }}</p>
-                </div>
-                <div class="user-actions">
-                    <a href="{% url 'ban_profile' report.user.id%}">
-                        <button>Забанить</button>
-                    </a>
-                    <a href="{% url 'delete_profile' report.user.id%}">
-                        <button>Удалить анкету</button>
-                    </a>
-                    <a href="{% url 'cansel_report' report.id%}">
-                        <button>Отказать</button>
-                    </a>
-                    <a href="https://t.me/{{ bot }}?start=ancete_{{ user.chat_id }}">
-                            <button>Посмотреть аккаунт пользователя</button>
+                        <p>Причина жалобы: {{ report.type }}</p>
+                        <p>Текст жалобы: {{ report.text }}</p>
+                    </div>
+                    <div class="user-actions">
+                        <a href="{% url 'ban_profile' report.user.id %}">
+                            <button>Забанить</button>
                         </a>
+                        <a href="{% url 'delete_profile' report.user.id %}">
+                            <button>Удалить анкету</button>
+                        </a>
+                        <a href="{% url 'cansel_report' report.id %}">
+                            <button>Отказать</button>
+                        </a>
+                        <a href="https://t.me/{{ bot }}?start=ancete_{{ report.user.chat_id }}">
+                            <button>Посмотреть аккаунт пользователя, который подал жалобу</button>
+                        </a>
+                        <a href="https://t.me/{{ bot }}?start=ancete_{{ report.reporter.chat_id }}">
+                            <button>Посмотреть аккаунт пользователя, который подал жалобу</button>
+                        </a>
+                    </div>
                 </div>
-            </div>
-            {%endfor%}
+            {% endfor %}
         </div>
     </div>
 </div>

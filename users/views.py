@@ -1,10 +1,16 @@
 import datetime
+import os
 import random
+import time
+import urllib.parse
+from io import BytesIO
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import authenticate, login
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.db.models import Q, Count
+from django.http import HttpResponse
 from django.shortcuts import render, HttpResponseRedirect, redirect
 from django.utils import timezone
 from django.views import View
@@ -13,6 +19,7 @@ from telebot import types
 from buttons import questionnaire_menu
 from const import bot
 from coord import get_coord_by_name
+from users import state
 from users.models import User, Report, Ad, Photo, Logs
 
 
@@ -82,7 +89,7 @@ def user_view(request):
             users_page = paginator.page(paginator.num_pages)
 
         # Получение уникальных городов
-        unique_cities = User.objects.values_list('city', flat=True).distinct()
+        unique_cities = User.objects.values_list('city', flat=True).distinct().order_by('city')
 
         # Составляем URL для пагинации с сохранением фильтров
         page_url = request.GET.copy()  # Создаем копию GET параметров
@@ -181,31 +188,30 @@ class EditProfile(View):
             return HttpResponseRedirect('/profiles')
 
 
-def stat(request):
-    if not request.user.is_authenticated:
-        return HttpResponseRedirect('/')
-    elif not request.user.groups.filter(name='статистика'):
-        return HttpResponseRedirect('/profiles')
-    all_users = User.objects.all()
-    users_count = all_users.count()
-    ban_users_count = all_users.filter(is_ban=True).count()
-    active_users_count = all_users.filter(active=True).count()
-    verefi_users_count = all_users.filter(is_checked=True).count()
-    female_count = all_users.filter(gender='женский').count()
-    male_count = all_users.filter(gender='мужской').count()
-    active_female_count = all_users.filter(active=True).filter(gender='женский').count()
-    active_male_count = all_users.filter(active=True).filter(gender='мужской').count()
-    return render(request, 'stat.html', context={
-        'users_count': users_count,
-        'ban_users_count': ban_users_count,
-        'active_users_count': active_users_count,
-        'verefi_users_count': verefi_users_count,
-        'female_count': female_count,
-        'male_count': male_count,
-        'active_female_count': active_female_count,
-        'active_male_count': active_male_count
-    })
+class StateView(View):
+    def get(self, request):
+        if not request.user.is_authenticated:
+            return HttpResponseRedirect('/')
+        elif not request.user.groups.filter(name='статистика'):
+            return HttpResponseRedirect('/profiles')
+        return render(request, 'stat.html')
 
+    def post(self, request):
+        wb = state.statistics()
+        buffer = BytesIO()
+        wb.save(buffer)
+        buffer.seek(0)
+        file_data = buffer.read()
+        response = HttpResponse(file_data,
+                                content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        date = timezone.now()
+        filename = f"Statistics {date.day}-{date.month}-{date.year}.xlsx"
+        encoded_filename = urllib.parse.quote(filename)
+
+        response['Content-Disposition'] = f'attachment; filename="{filename}"; filename*=UTF-8\'\'{encoded_filename}'
+
+        response['Content-Length'] = buffer.getbuffer().nbytes
+        return response
 
 def verefi(request):
     if not request.user.is_authenticated:
@@ -298,15 +304,26 @@ def create_ad(request):
         photo1 = request.FILES.get('image1')
         photo2 = request.FILES.get('image2')
         photo3 = request.FILES.get('image3')
-        try:
-            deactivate_time = int(request.POST.get('deactivate_time'))
-            deactivate_time = timezone.now() + datetime.timedelta(hours=deactivate_time)
-        except Exception:
-            messages.error(request, 'Время деактивации должно быть числом')
+        start_time = request.POST.get('start_time')
+        end_time = request.POST.get('end_time')
+        max_view = request.POST.get('max_view')
+        chance = int(request.POST.get('chance'))
+        if start_time and end_time:
+            date_format = '%Y-%m-%dT%H:%M'
+            start_time = datetime.datetime.fromtimestamp(start_time, date_format)
+            end_time = datetime.datetime.fromtimestamp(end_time, date_format)
+            max_view = None
+        elif max_view:
+            max_view = int(max_view)
+        else:
+            messages.error(request, 'Нужно указать или время начала с временем конца показа, или максиимальное число просмотров')
             return render(request, 'create_ad.html')
         text = request.POST.get('text')
         try:
-            Ad.objects.create(photo1=photo1, photo2=photo2, photo3=photo3, text=text, deactivate_time=deactivate_time)
+            ad = Ad.objects.create(photo1=photo1, photo2=photo2, photo3=photo3, text=text, max_view=max_view, start_time=start_time, end_time=end_time, chance=chance)
+            if timezone.now().timestamp() >= start_time.timestamp() or max_view:
+                ad.is_active = True
+                ad.save()
         except Exception as e:
             pass
         return HttpResponseRedirect('/ad')
@@ -451,9 +468,44 @@ def login_view(request):
     return render(request, 'login.html')
 
 
-def add_media(medias, avatar_data, text=None):
-    medias.append(types.InputMediaPhoto(media=avatar_data, caption=text))
+def add_media(medias, file_path, text=None):
+    try:
+        if file_path and os.path.exists(file_path):
+            with open(file_path, 'rb') as file_to_upload:
+                file_data = file_to_upload.read()  # Читаем данные файла
+                medias.append(types.InputMediaPhoto(media=file_data, caption=text))  # Отправляем данные файла
+                print(f"Added to media: {file_path}")
+        else:
+            print(f"Error adding to media: {file_path}, file doesn't exist or is None")
+    except Exception as e:
+        print(f"Error adding to media: {e}")
     return medias
+
+
+def save_file(file_obj):
+    if file_obj:
+        file_name = str(int(time.time())) + "_" + file_obj.name
+        file_path = os.path.join(settings.MEDIA_ROOT, file_name)
+        print(f"Saving file to: {file_path}")  # Логгируем путь сохранения
+        try:
+            with open(file_path, 'wb') as destination:
+                for chunk in file_obj.chunks():
+                    destination.write(chunk)
+            print(f"File saved: {file_path}")  # Логгируем успешное сохранение
+            if not os.path.exists(file_path):
+                print(f"Error: File doesn't exist at {file_path}")
+            else:
+                file_size = os.path.getsize(file_path)
+                print(f"File size: {file_size}")  # Логгируем размер файла
+                if file_size == 0:
+                    print(f"Error: File is empty: {file_path}")  # Логгируем пустой файл
+        except Exception as e:
+            print(f"Error saving file: {e}")
+            return None  # Возвращаем None, чтобы не отправлять медиа с ошибкой
+        return file_path
+    else:
+        print("Error: file_obj is None")
+        return None  # Если file_obj нет, то возвращаем None
 
 
 def mailing(request):
@@ -467,21 +519,38 @@ def mailing(request):
         photo2 = request.FILES.get('image2')
         photo3 = request.FILES.get('image3')
         text = request.POST.get('text')
+        print(photo1, photo2, photo3)
+
+        # Сохраняем файлы и получаем их пути
+        photo1_path = save_file(photo1)
+        photo2_path = save_file(photo2)
+        photo3_path = save_file(photo3)
+
         medias = []
-        if photo1:
-            medias = add_media(medias, photo1, text)
-        if photo2:
-            medias = add_media(medias, photo2)
-        if photo3:
-            medias = add_media(medias, photo3)
+        if photo1_path:
+            medias = add_media(medias, photo1_path, text)
+        if photo2_path:
+            medias = add_media(medias, photo2_path)
+        if photo3_path:
+            medias = add_media(medias, photo3_path)
+
         for user in User.objects.all():
             try:
                 if medias:
                     bot.send_media_group(user.chat_id, medias)
-                else:
+                elif text:
                     bot.send_message(user.chat_id, text)
             except Exception as e:
-                pass
+                print(f"Ошибка отправки пользователю {user.chat_id}: {e}")
+
+        # Удаляем временные файлы
+        if photo1_path and os.path.exists(photo1_path):
+            os.remove(photo1_path)
+        if photo2_path and os.path.exists(photo2_path):
+            os.remove(photo2_path)
+        if photo3_path and os.path.exists(photo3_path):
+            os.remove(photo3_path)
+
         return HttpResponseRedirect('/mailing')
     else:
         return render(request, 'mailing.html')

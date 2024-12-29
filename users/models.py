@@ -24,6 +24,7 @@ class User(models.Model):
     latitude = models.FloatField(default=1, verbose_name='Широта')
     longitude = models.FloatField(default=1, verbose_name='Долгота')
     active = models.BooleanField(default=False, verbose_name='Активен ли поиск')
+    delete_message = models.IntegerField(default=0, verbose_name='Сколько сообщений удалить?')
     registration_date = models.DateTimeField(auto_now_add=True, verbose_name='Дата регистрации')
     like_users = models.ManyToManyField('LikeUsers', blank=True,
                                         verbose_name='Пользователи, которые лайкнули анкету')
@@ -47,7 +48,7 @@ class User(models.Model):
 
     def status(self):
         if self.is_checked:
-            return '✅'
+            return 'Verified✅'
         return ''
     def check_verefi(self):
         if self.is_checked:
@@ -103,8 +104,10 @@ class Photo(models.Model):
 
 
 class Report(models.Model):
+    reporter = models.ForeignKey(User, related_name='reporters', on_delete=models.CASCADE, verbose_name='Пользователь, который подал жалобу')
     user = models.ForeignKey(User, related_name='reports', on_delete=models.CASCADE, verbose_name='Пользователь, на которого подана жалоба')
     text = models.TextField(verbose_name='Текст жалобы')
+    type = models.CharField(max_length=128, verbose_name='Причина жалобы')
 
 
 class Ad(models.Model):
@@ -112,8 +115,12 @@ class Ad(models.Model):
     photo2 = models.ImageField(upload_to='photos', blank=True, null=True, verbose_name='Фотография рекламы2')
     photo3 = models.ImageField(upload_to='photos', blank=True, null=True, verbose_name='Фотография рекламы3')
     text = models.TextField(verbose_name='Текст рекламы')
-    deactivate_time = models.DateTimeField(verbose_name='Время деактивации')
-    is_active = models.BooleanField(default=True, verbose_name='Активна ли реклама')
+    view = models.IntegerField(default=0, verbose_name='Количество показов')
+    max_view = models.IntegerField(default=None, blank=True, null=True, verbose_name='Нужное кол-во показов')
+    chance = models.IntegerField(default=5, verbose_name='Шанс показа в процентах')
+    start_time = models.DateTimeField(default=None, blank=True, null=True, verbose_name='Время начала показа')
+    end_time = models.DateTimeField(default=None, blank=True, null=True, verbose_name='Время конца показа')
+    is_active = models.BooleanField(default=False, verbose_name='Активна ли реклама')
 
 
     def status(self):
@@ -126,3 +133,8 @@ class Logs(models.Model):
     type = models.CharField(max_length=2048, verbose_name='Тип Действия')
     user = models.ForeignKey(main_user, related_name='logs', on_delete=models.CASCADE, verbose_name='Пользователь, который совершает действие')
     time = models.DateTimeField(verbose_name='Время действия')
+
+
+class Links(models.Model):
+    name = models.CharField(max_length=128, verbose_name='Название ссылки')
+    user_count = models.IntegerField(default=0, verbose_name='Количество пользователей')

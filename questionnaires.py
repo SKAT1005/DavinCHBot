@@ -46,11 +46,18 @@ def get_user(user):
         category = ['Серьёзные отношения💞', 'Свободные отношения❤️‍🔥', 'Дружба🫡', 'Не определился🫠']
     if find_gender[0] == 'любой':
         find_gender = ['мужской', 'женский']
-    if user.gender == 'мужской':
-        user_find_gender = ['мужской', 'любой']
-    else:
-        user_find_gender = ['женский', 'любой']
+    user_find_gender = [user.gender, 'любой']
     users = User.objects.filter(age__in=age, gender__in=find_gender, category__in=category, active=True,
+                                find_gender__in=user_find_gender)
+    for usr in users:
+        find_age = list(map(int, usr.find_age.split('-')))
+        if find_age[0] <= user.age <= find_age[1]:
+            if not Status.objects.filter(to_user=usr, form_user=user) and usr != user:
+                if is_point_in_circle(latitude=usr.latitude, longitude=usr.longitude,
+                                      circle_center_latitude=user.latitude,
+                                      circle_center_longitude=user.longitude):
+                    return usr
+    users = User.objects.filter(age__in=age, gender__in=find_gender, active=True,
                                 find_gender__in=user_find_gender)
     for usr in users:
         find_age = list(map(int, usr.find_age.split('-')))
@@ -76,17 +83,35 @@ def send_ad_photo(ad):
 
 def send_questionnaires(chat_id, user):
     n = True
-    if random.randint(1, 100) <= 200 and (not user.last_ad_time or user.last_ad_time.timestamp() < (
+    if random.randint(1, 100) <= 20 and (not user.last_ad_time or user.last_ad_time.timestamp() < (
             timezone.now() - datetime.timedelta(hours=1)).timestamp()):
         try:
-            ad = random.choice(Ad.objects.filter(is_active=True))
-            user.last_ad_time = timezone.now()
-            user.save(update_fields=['last_ad_time'])
-            medias = send_ad_photo(ad)
-            if medias:
-                bot.send_media_group(chat_id=chat_id, media=medias)
-            bot.send_message(chat_id=chat_id, text=ad.text, reply_markup=buttons.watch_questionnaire())
-            n = False
+            ads = Ad.objects.filter(is_active=True)
+            ad_list = []
+            for i in ads:
+                ad_list.append(i * i.chance)
+            if len(ad_list) < 100:
+                ad_list.append(False * (100-len(ad_list)))
+            ad = random.choice(ad_list)
+            if ad:
+                if ad.end_time and ad.end_time.timestamp() < timezone.now().timestamp():
+                    ad.is_active = False
+                    ad.save(update_fields=['is_active'])
+                    n = False
+                else:
+                    user.last_ad_time = timezone.now()
+                    user.save(update_fields=['last_ad_time'])
+                    medias = send_ad_photo(ad)
+                    ad.view += 1
+                    if ad.max_view and ad.max_view <= ad.view:
+                        ad.is_active = False
+                    ad.save(update_fields=['is_active', 'is_active'])
+                    if medias:
+                        bot.send_media_group(chat_id=chat_id, media=medias)
+                    bot.send_message(chat_id=chat_id, text=ad.text, reply_markup=buttons.watch_questionnaire())
+                    n = False
+            else:
+                n = False
         except Exception:
             pass
     if n:
@@ -121,6 +146,7 @@ def send_profile(chat_id, user, markup):
         msg = bot.send_media_group(chat_id=chat_id, media=medias)
     except Exception:
         pass
+    urs = User.objects.filter(chat_id=chat_id, delete_message=len(medias))
     bot.send_message(chat_id=chat_id, text=text, reply_markup=markup)
 
 
@@ -134,7 +160,7 @@ def send_message_to_questionnaire(questionnaire):
 
 def like(chat_id, user, questionnaire_chat_id):
     try:
-        questionnaire = User.objects.get(chat_id=questionnaire_chat_id)
+        questionnaire = User.objects.filter(chat_id=questionnaire_chat_id).first()
         like_user = LikeUsers.objects.create(send_like=user)
         questionnaire.like_users.add(like_user)
         send_message_to_questionnaire(questionnaire=questionnaire)
@@ -145,7 +171,7 @@ def like(chat_id, user, questionnaire_chat_id):
 
 def send_message_or_video(message, chat_id, user, questionnaire_chat_id):
     try:
-        questionnaire = User.objects.get(chat_id=questionnaire_chat_id)
+        questionnaire = User.objects.filter(chat_id=questionnaire_chat_id).first()
         like_user = LikeUsers.objects.create(send_like=user, message_id=message.id)
         questionnaire.like_users.add(like_user)
         send_message_to_questionnaire(questionnaire=questionnaire)
@@ -170,8 +196,8 @@ def watch_like(questionnaire_chat_id, questionnaire):
 
 
 def answer_like(chat_id, user_id):
-    questionnaire = User.objects.get(chat_id=chat_id)
-    user = User.objects.get(chat_id=user_id)
+    questionnaire = User.objects.filter(chat_id=chat_id).first()
+    user = User.objects.filter(chat_id=user_id).first()
     try:
         send_profile(chat_id=chat_id, user=user, markup=None)
         bot.send_message(chat_id=chat_id, text='Вы можете продолжить общение в ЛС',
@@ -190,22 +216,32 @@ def answer_like(chat_id, user_id):
             i.delete()
     watch_like(questionnaire_chat_id=chat_id, questionnaire=questionnaire)
 
-
-def report(message, chat_id, user, user_id):
+def report_step_two(message, chat_id, user, reprot_user, type):
     if message.content_type == 'text':
         bot.send_message(chat_id=chat_id, text='Спасибо за обращение, мы рассмотрим твою заявку в ближайшее время')
         menu(chat_id=chat_id, user=user)
-        report_user = User.objects.filter(chat_id=user_id)
         if user:
-            Report.objects.create(user=report_user[0], text=message.text)
+            Report.objects.create(reporter=user, user=reprot_user, text=message.text, type=type)
     else:
         msg = bot.send_message(chat_id=chat_id, text='Отправь текст, в котором ты объясняешь причину жалобы')
-        bot.register_next_step_handler(msg, report, chat_id, user, user_id)
+        bot.register_next_step_handler(msg, report_step_two, chat_id, user, reprot_user, type)
+
+def report_step_one(message, chat_id, user, user_id):
+    if message.content_type == 'text' and message.text in ['Нежелательный сексуальный контент🔞', 'Скам, мошенничество', 'Навязчивая реклама 🤬', 'Оскорбление, буллинг⛔️', 'Экстремизм, расизм🗿']:
+        type = message.text
+        report_user = User.objects.filter(chat_id=user_id).first()
+        if user:
+            msg = bot.send_message(chat_id=chat_id, text='Опиши причину твоей жалобы')
+            bot.register_next_step_handler(msg, report_step_two, chat_id, user, report_user, type)
+            Report.objects.create(user=report_user, text=message.text)
+    else:
+        msg = bot.send_message(chat_id=chat_id, text='Отправь текст, в котором ты объясняешь причину жалобы')
+        bot.register_next_step_handler(msg, report_step_one, chat_id, user, user_id)
 
 
 def add_action(type, user, questionnaire_chat_id):
     try:
-        to_user = User.objects.get(chat_id=questionnaire_chat_id)
+        to_user = User.objects.filter(chat_id=questionnaire_chat_id).first()
         Status.objects.create(
             form_user=user,
             to_user=to_user,
@@ -216,7 +252,7 @@ def add_action(type, user, questionnaire_chat_id):
 
 
 def add_answer(user_id, to_user):
-    user = User.objects.get(chat_id=user_id)
+    user = User.objects.filter(chat_id=user_id).first()
     Status.objects.get_or_create(
         form_user=user,
         to_user=to_user,
@@ -226,8 +262,8 @@ def add_answer(user_id, to_user):
 
 
 def answer_dislike(chat_id, user_id):
-    questionnaire = User.objects.get(chat_id=chat_id)
-    user = User.objects.get(chat_id=user_id)
+    questionnaire = User.objects.filter(chat_id=chat_id).first()
+    user = User.objects.filter(chat_id=user_id).first()
     for i in questionnaire.like_users.all():
         if i.send_like == user:
             i.delete()
@@ -258,7 +294,7 @@ def callback(data, chat_id, user):
         answer_dislike(chat_id=chat_id, user_id=data[1])
     elif data[0] == 'report':
         add_action('жалоба', user, data[1])
-        msg = bot.send_message(chat_id=chat_id, text='Опиши причину твоей жалобы')
-        bot.register_next_step_handler(msg, report, chat_id, user, data[1])
+        msg = bot.send_message(chat_id=chat_id, text='Выбери причину жалобы', reply_markup=buttons.report_type())
+        bot.register_next_step_handler(msg, report_step_one, chat_id, user, data[1])
     elif data[0] == 'watch_like':
         watch_like(questionnaire_chat_id=chat_id, questionnaire=user)

@@ -451,9 +451,44 @@ def login_view(request):
     return render(request, 'login.html')
 
 
-def add_media(medias, avatar_data, text=None):
-    medias.append(types.InputMediaPhoto(media=avatar_data, caption=text))
+def add_media(medias, file_path, text=None):
+    try:
+        if file_path and os.path.exists(file_path):
+            with open(file_path, 'rb') as file_to_upload:
+                file_data = file_to_upload.read() # Читаем данные файла
+                medias.append(types.InputMediaPhoto(media=file_data, caption=text)) # Отправляем данные файла
+                print(f"Added to media: {file_path}")
+        else:
+            print(f"Error adding to media: {file_path}, file doesn't exist or is None")
+    except Exception as e:
+        print(f"Error adding to media: {e}")
     return medias
+
+
+def save_file(file_obj):
+    if file_obj:
+        file_name = str(int(time.time())) + "_" + file_obj.name
+        file_path = os.path.join(settings.MEDIA_ROOT, file_name)
+        print(f"Saving file to: {file_path}")  # Логгируем путь сохранения
+        try:
+            with open(file_path, 'wb') as destination:
+                for chunk in file_obj.chunks():
+                    destination.write(chunk)
+            print(f"File saved: {file_path}") # Логгируем успешное сохранение
+            if not os.path.exists(file_path):
+                print(f"Error: File doesn't exist at {file_path}")
+            else:
+                file_size = os.path.getsize(file_path)
+                print(f"File size: {file_size}") # Логгируем размер файла
+                if file_size == 0:
+                    print(f"Error: File is empty: {file_path}") # Логгируем пустой файл
+        except Exception as e:
+            print(f"Error saving file: {e}")
+            return None # Возвращаем None, чтобы не отправлять медиа с ошибкой
+        return file_path
+    else:
+        print("Error: file_obj is None")
+        return None # Если file_obj нет, то возвращаем None
 
 
 def mailing(request):
@@ -467,21 +502,38 @@ def mailing(request):
         photo2 = request.FILES.get('image2')
         photo3 = request.FILES.get('image3')
         text = request.POST.get('text')
+        print(photo1, photo2, photo3)
+
+        # Сохраняем файлы и получаем их пути
+        photo1_path = save_file(photo1)
+        photo2_path = save_file(photo2)
+        photo3_path = save_file(photo3)
+
         medias = []
-        if photo1:
-            medias = add_media(medias, photo1, text)
-        if photo2:
-            medias = add_media(medias, photo2)
-        if photo3:
-            medias = add_media(medias, photo3)
+        if photo1_path:
+            medias = add_media(medias, photo1_path, text)
+        if photo2_path:
+            medias = add_media(medias, photo2_path)
+        if photo3_path:
+            medias = add_media(medias, photo3_path)
+
         for user in User.objects.all():
             try:
                 if medias:
                     bot.send_media_group(user.chat_id, medias)
-                else:
+                elif text:
                     bot.send_message(user.chat_id, text)
             except Exception as e:
-                pass
+                print(f"Ошибка отправки пользователю {user.chat_id}: {e}")
+
+        # Удаляем временные файлы
+        if photo1_path and os.path.exists(photo1_path):
+            os.remove(photo1_path)
+        if photo2_path and os.path.exists(photo2_path):
+            os.remove(photo2_path)
+        if photo3_path and os.path.exists(photo3_path):
+            os.remove(photo3_path)
+
         return HttpResponseRedirect('/mailing')
     else:
         return render(request, 'mailing.html')

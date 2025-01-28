@@ -155,6 +155,14 @@
                     {% endif %}
                     <div class="ad-info">
                         <p>Текст рекламы: {{ad.text}}</p>
+                        {% if ad.start_time %}
+                            <p>Время начала показа: {{ ad.start_time }}</p>
+                            <p>Время конца показа: {{ ad.end_time }}</p>
+                            <p>Количество показов: {{ ad.view }}</p>
+                        {% else %}
+                            <p>Количество показов: {{ ad.view }}/{{ ad.max_view }}</p>
+                        {% endif %}
+                        <p>Шанс показа: {{ ad.chance }}</p>
                         <p>Статус: {{ad.status}}</p>
                     </div>
                     <div class="ad-actions">

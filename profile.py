@@ -139,6 +139,8 @@ def profile_menu(chat_id, user):
     medias = []
     for i in user.avatars.all()[:3]:
         medias = add_media(medias, i.file_id)
+    user.delete_message = len(medias)
+    user.save(update_fields=['delete_message'])
     try:
         m = bot.send_media_group(chat_id=chat_id, media=medias)
     except Exception:
@@ -157,6 +159,8 @@ def add_media(medias, avatar_data):
 
 def photo(chat_id, user):
     medias = []
+    user.delete_message = len(medias)
+    user.save(update_fields=['delete_message'])
     for i in user.avatars.all()[:3]:
         medias = add_media(medias, i.file_id)
     bot.send_media_group(chat_id=chat_id, media=medias)
@@ -268,7 +272,7 @@ def callback(data, chat_id, user):
         user.delete()
         bot.send_message(chat_id=chat_id, text='Твоя анкета удалена', reply_markup=buttons.create())
     elif data[0] == 'verefi':
-        text = random.choice(['Для подтверждения сделай селфи со следующим символом: 🤚', 'Для подтверждения сделай селфи со следующим символом: 🤙', 'Для подтверждения сделай селфи со следующим символом: 👍', 'Для подтверждения сделай селфи со следующим символом: 🤟'])
+        text = random.choice(simbols)
         msg = bot.send_message(chat_id=chat_id, text=text, reply_markup=buttons.go_back('menu'))
         bot.register_next_step_handler(msg, verefi, chat_id, user, text[-2:])
     elif data[0] == 'name':

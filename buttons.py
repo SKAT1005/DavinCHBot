@@ -69,10 +69,10 @@ def check(id):
 
 def menu(user):
     markup = types.InlineKeyboardMarkup(row_width=1)
-    watch = types.InlineKeyboardButton('Смотреть анкеты', callback_data='profiles')
+    watch = types.InlineKeyboardButton('Смотреть анкеты 👀', callback_data='profiles')
     create = types.InlineKeyboardButton(f'Мэтчи ({user.like_users.all().count()}) ♥️',
                                         callback_data='profiles|watch_like')
-    edit_filter = types.InlineKeyboardButton('Настроить поиск ⚙️', callback_data='filter')
+    edit_filter = types.InlineKeyboardButton('Настроить поиск 🔍', callback_data='filter')
     verefi = types.InlineKeyboardButton('Подтверждение анкеты ✅', callback_data='edit_profile|verefi')
     edit_profile = types.InlineKeyboardButton('Настроить анкету ⚙️', callback_data='edit_profile')
     markup.add(watch, create, edit_filter, verefi, edit_profile)
@@ -187,14 +187,14 @@ def create():
 
 def watch_like():
     markup = types.InlineKeyboardMarkup()
-    create = types.InlineKeyboardButton('Смотреть анкеты', callback_data='profiles|watch_like')
+    create = types.InlineKeyboardButton('Смотреть анкеты 👀', callback_data='profiles|watch_like')
     markup.add(create)
     return markup
 
 
 def continue_watch():
     markup = types.InlineKeyboardMarkup(row_width=1)
-    watch = types.InlineKeyboardButton('Смотреть анкеты', callback_data='profiles')
+    watch = types.InlineKeyboardButton('Смотреть анкеты 👀', callback_data='profiles')
     menu = types.InlineKeyboardButton('В меню', callback_data='menu')
     markup.add(watch, menu)
     return markup

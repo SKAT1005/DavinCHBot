@@ -92,10 +92,49 @@
                 {% csrf_token %}
                 <div class="stat-card">
                     <h3>Кол-во пользователей</h3>
-                    <p>
-                        <button type="submit">Получить статистику</button>
-                    </p>
-                </div>
+                    <div class="stats-container">
+                        <div class="stat-card">
+                            <h3>Кол-во пользователей</h3>
+                            <p>{{ users_count }}</p>
+                        </div>
+
+                        <div class="stat-card">
+                            <h3>Кол-во забаненых анкет</h3>
+                            <p>{{ ban_users_count }}</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Кол-во активных анкет</h3>
+                            <p>{{ active_users_count }}</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Кол-во подтвержденных</h3>
+                            <p>{{ verefi_users_count }}</p>
+                        </div>
+
+                        <div class="stat-card">
+                            <h3>Кол-во женщин</h3>
+                            <p>{{ female_count }}</p>
+                        </div>
+
+                        <div class="stat-card">
+                            <h3>Кол-во мужчин</h3>
+                            <p>{{ male_count }}</p>
+                        </div>
+
+
+                        <div class="stat-card">
+                            <h3>Кол-во активных мужских аккаунтов</h3>
+                            <p>{{ active_male_count }}</p>
+                        </div>
+
+                        <div class="stat-card">
+                            <h3>Кол-во активных женских аккаунтов</h3>
+                            <p>{{ active_female_count }}</p>
+                        </div>
+                        <p>
+                            <button type="submit">Получить полную статистику</button>
+                        </p>
+                    </div>
             </form>
         </div>
     </div>

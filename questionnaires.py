@@ -60,13 +60,11 @@ def get_user(user):
     users = User.objects.filter(age__in=age, gender__in=find_gender, active=True,
                                 find_gender__in=user_find_gender)
     for usr in users:
-        find_age = list(map(int, usr.find_age.split('-')))
-        if find_age[0] <= user.age <= find_age[1]:
-            if not Status.objects.filter(to_user=usr, form_user=user) and usr != user:
-                if is_point_in_circle(latitude=usr.latitude, longitude=usr.longitude,
-                                      circle_center_latitude=user.latitude,
-                                      circle_center_longitude=user.longitude):
-                    return usr
+        if not Status.objects.filter(to_user=usr, form_user=user) and usr != user:
+            if is_point_in_circle(latitude=usr.latitude, longitude=usr.longitude,
+                                  circle_center_latitude=user.latitude,
+                                  circle_center_longitude=user.longitude):
+                return usr
     return None
 
 
@@ -83,15 +81,14 @@ def send_ad_photo(ad):
 
 def send_questionnaires(chat_id, user):
     n = True
-    if random.randint(1, 100) <= 20 and (not user.last_ad_time or user.last_ad_time.timestamp() < (
+    if random.randint(1, 100) <= 200 and (not user.last_ad_time or user.last_ad_time.timestamp() < (
             timezone.now() - datetime.timedelta(hours=1)).timestamp()):
         try:
             ads = Ad.objects.filter(is_active=True)
             ad_list = []
             for i in ads:
-                ad_list.append(i * i.chance)
-            if len(ad_list) < 100:
-                ad_list.append(False * (100-len(ad_list)))
+                for n in range(i.chance):
+                    ad_list.append(i)
             ad = random.choice(ad_list)
             if ad:
                 if ad.end_time and ad.end_time.timestamp() < timezone.now().timestamp():
@@ -99,20 +96,21 @@ def send_questionnaires(chat_id, user):
                     ad.save(update_fields=['is_active'])
                     n = False
                 else:
-                    user.last_ad_time = timezone.now()
-                    user.save(update_fields=['last_ad_time'])
                     medias = send_ad_photo(ad)
+                    user.last_ad_time = timezone.now()
+                    user.delete_message = len(medias)
+                    user.save(update_fields=['last_ad_time', 'delete_message'])
                     ad.view += 1
                     if ad.max_view and ad.max_view <= ad.view:
                         ad.is_active = False
-                    ad.save(update_fields=['is_active', 'is_active'])
+                    ad.save(update_fields=['view', 'is_active'])
                     if medias:
                         bot.send_media_group(chat_id=chat_id, media=medias)
-                    bot.send_message(chat_id=chat_id, text=ad.text, reply_markup=buttons.watch_questionnaire())
+                    bot.send_message(chat_id=chat_id, text=ad.text, reply_markup=buttons.watch_questionnaire(), parse_mode='HTML')
                     n = False
             else:
                 n = False
-        except Exception:
+        except Exception as e:
             pass
     if n:
         try:
@@ -146,7 +144,10 @@ def send_profile(chat_id, user, markup):
         msg = bot.send_media_group(chat_id=chat_id, media=medias)
     except Exception:
         pass
-    urs = User.objects.filter(chat_id=chat_id, delete_message=len(medias))
+    usr = User.objects.get(chat_id=chat_id)
+    n = len(medias)
+    usr.delete_message = n
+    usr.save(update_fields=['delete_message'])
     bot.send_message(chat_id=chat_id, text=text, reply_markup=markup)
 
 
@@ -216,6 +217,7 @@ def answer_like(chat_id, user_id):
             i.delete()
     watch_like(questionnaire_chat_id=chat_id, questionnaire=questionnaire)
 
+
 def report_step_two(message, chat_id, user, reprot_user, type):
     if message.content_type == 'text':
         bot.send_message(chat_id=chat_id, text='Спасибо за обращение, мы рассмотрим твою заявку в ближайшее время')
@@ -226,8 +228,11 @@ def report_step_two(message, chat_id, user, reprot_user, type):
         msg = bot.send_message(chat_id=chat_id, text='Отправь текст, в котором ты объясняешь причину жалобы')
         bot.register_next_step_handler(msg, report_step_two, chat_id, user, reprot_user, type)
 
+
 def report_step_one(message, chat_id, user, user_id):
-    if message.content_type == 'text' and message.text in ['Нежелательный сексуальный контент🔞', 'Скам, мошенничество', 'Навязчивая реклама 🤬', 'Оскорбление, буллинг⛔️', 'Экстремизм, расизм🗿']:
+    if message.content_type == 'text' and message.text in ['Нежелательный сексуальный контент🔞', 'Скам, мошенничество',
+                                                           'Навязчивая реклама 🤬', 'Оскорбление, буллинг⛔️',
+                                                           'Экстремизм, расизм🗿']:
         type = message.text
         report_user = User.objects.filter(chat_id=user_id).first()
         if user:

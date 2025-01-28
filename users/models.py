@@ -48,7 +48,7 @@ class User(models.Model):
 
     def status(self):
         if self.is_checked:
-            return 'Verified✅'
+            return '✅'
         return ''
     def check_verefi(self):
         if self.is_checked:

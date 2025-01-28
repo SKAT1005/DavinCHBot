@@ -1,9 +1,9 @@
 from django.contrib import admin
-from .models import User, Report, Logs, LikeUsers
+from .models import User, Report, Logs, Status
 
 
-@admin.register(LikeUsers)
-class LikeUsersAdmin(admin.ModelAdmin):
+@admin.register(Status)
+class Status(admin.ModelAdmin):
     pass
 
 

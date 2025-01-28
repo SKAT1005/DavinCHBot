@@ -194,7 +194,25 @@ class StateView(View):
             return HttpResponseRedirect('/')
         elif not request.user.groups.filter(name='статистика'):
             return HttpResponseRedirect('/profiles')
-        return render(request, 'stat.html')
+        all_users = User.objects.all()
+        users_count = all_users.count()
+        ban_users_count = all_users.filter(is_ban=True).count()
+        active_users_count = all_users.filter(active=True).count()
+        verefi_users_count = all_users.filter(is_checked=True).count()
+        female_count = all_users.filter(gender='женский').count()
+        male_count = all_users.filter(gender='мужской').count()
+        active_female_count = all_users.filter(active=True).filter(gender='женский').count()
+        active_male_count = all_users.filter(active=True).filter(gender='мужской').count()
+        return render(request, 'stat.html', context={
+            'users_count': users_count,
+            'ban_users_count': ban_users_count,
+            'active_users_count': active_users_count,
+            'verefi_users_count': verefi_users_count,
+            'female_count': female_count,
+            'male_count': male_count,
+            'active_female_count': active_female_count,
+            'active_male_count': active_male_count
+        })
 
     def post(self, request):
         wb = state.statistics()
@@ -315,13 +333,15 @@ def create_ad(request):
             max_view = None
         elif max_view:
             max_view = int(max_view)
+            start_time = None
+            end_time = None
         else:
             messages.error(request, 'Нужно указать или время начала с временем конца показа, или максиимальное число просмотров')
             return render(request, 'create_ad.html')
         text = request.POST.get('text')
         try:
             ad = Ad.objects.create(photo1=photo1, photo2=photo2, photo3=photo3, text=text, max_view=max_view, start_time=start_time, end_time=end_time, chance=chance)
-            if timezone.now().timestamp() >= start_time.timestamp() or max_view:
+            if (start_time and timezone.now().timestamp() >= start_time.timestamp()) or max_view:
                 ad.is_active = True
                 ad.save()
         except Exception as e:

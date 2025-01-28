@@ -53,29 +53,7 @@ def send_account(user_chat_id):
 
 @bot.message_handler(commands=['start'])
 def start(message):
-    txt = """
-    <b>1. Объединение стилей: Стили из обоих исходных файлов были объединены в один блок. Некоторые дублирующиеся стили, такие как font-family, margin, padding были перенесены в глобальные стили body и container.</b>
-<i>2. Применение стилей:
-   - Добавлены стили для textarea  height: 200px
-   - Добавлены стили для кнопок форматирования
-   - Обновлены стили для textarea</i>
-<u>3. Внедрение редактора: HTML-редактор был внедрен в форму, путем добавления textarea и кнопок для форматирования текста. Так же добавлено поле preview для просмотра</u>
-<strike>4. Изменение id: id textarea с htmlInput был изменен на text</strike>
-<span class="tg-spoiler">5. Адаптированный JS: JavaScript был адаптирован для работы с новым id textarea.</span>
-<a href="http://www.example.com/">6. Добавление type=button: для кнопок форматирования
-</a>
-<pre class="language-python">Особенности:
-
-•   Единый стиль: Весь код использует единый стиль оформления.
-•   Форматирование текста: Внедрены кнопки форматирования текста.
-•   Предварительный просмотр: Возможность предпросмотра введенного текста с HTML-тегами.
-•   Адаптация: JS-код адаптирован к новым id и классам элементов.
-•   Организация кода: Код разбит на логические блоки.
-</pre>
-<code>Теперь код имеет единый стиль, а функциональность редактора HTML-текста встроена в форму создания рекламы.</code>
-    """
     chat_id = message.chat.id
-    bot.send_message(chat_id=chat_id, text=txt, parse_mode='HTML')
     user = User.objects.filter(chat_id=chat_id).first()
     command = message.text.split()
     if len(command) == 2 and len(command[1].split('_')) == 2 and command[1].split('_')[0] == 'ancete':
@@ -163,8 +141,12 @@ def callback(call):
                 message_ids = []
                 for i in range(user.delete_message + 1):
                     message_ids.append(message_id - i)
-                for message_id in message_ids:
-                    bot.delete_message(chat_id=chat_id, message_id=message_id)
+                try:
+                    bot.delete_messages(chat_id=chat_id, message_ids=message_ids)
+                except Exception as e:
+                    pass
+                user.delete_message = 0
+                user.save(update_fields=['delete_message'])
             except Exception:
                 pass
             msg = bot.send_message(chat_id=chat_id, text='.', reply_markup=types.ReplyKeyboardRemove())
@@ -203,18 +185,9 @@ def status():
         time.sleep(60 * 60 * 4)
 
 
-def ad_check():
-    while True:
-        for ad in Ad.objects.filter(is_active=True):
-            if ad.deactivate_time.timestamp() >= timezone.now():
-                ad.is_active = False
-                ad.save(update_fields=['is_active'])
-        time.sleep(60 * 60)
 
 
 if __name__ == '__main__':
     polling_thread1 = threading.Thread(target=status)
     polling_thread1.start()
-    polling_thread2 = threading.Thread(target=ad_check)
-    polling_thread2.start()
     bot.infinity_polling(timeout=50, long_polling_timeout=25)

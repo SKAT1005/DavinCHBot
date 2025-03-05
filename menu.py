@@ -23,10 +23,13 @@ def menu(chat_id, user):
     medias = []
     for i in user.avatars.all()[:3]:
         medias = add_media(medias, i.file_id)
-    user.delete_message = len(medias)
-    user.save(update_fields=['delete_message'])
     try:
-        bot.send_media_group(chat_id=chat_id, media=medias)
+        msg = bot.send_media_group(chat_id=chat_id, media=medias)
     except Exception:
-        print(chat_id)
+        pass
+    n = ''
+    for i in msg:
+        n += f'{i.id},'
+    user.delete_message = n
+    user.save(update_fields=['delete_message'])
     bot.send_message(chat_id=chat_id, text=text, reply_markup=buttons.menu(user=user))

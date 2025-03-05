@@ -3,6 +3,7 @@ import random
 import time
 
 import django
+from django.utils import timezone
 from telebot import types
 
 import buttons
@@ -29,6 +30,7 @@ def create_account(chat_id, name, age, gender, category, description, find_age, 
         find_gender=find_gender,
         longitude=longitude,
         latitude=latitude,
+        last_active=timezone.now()
     )
     bot.send_message(chat_id=chat_id, text='Отправь нам до трех своих фотографий', reply_markup=types.ReplyKeyboardRemove())
 

@@ -139,13 +139,16 @@ def profile_menu(chat_id, user):
     medias = []
     for i in user.avatars.all()[:3]:
         medias = add_media(medias, i.file_id)
-    user.delete_message = len(medias)
-    user.save(update_fields=['delete_message'])
     try:
-        m = bot.send_media_group(chat_id=chat_id, media=medias)
+        msg = bot.send_media_group(chat_id=chat_id, media=medias)
     except Exception:
         pass
     bot.send_message(chat_id=chat_id, text=text, reply_markup=buttons.profile_menu())
+    n = ''
+    for i in msg:
+        n += f'{i.id},'
+    user.delete_message = n
+    user.save(update_fields=['delete_message'])
 
 
 def add_media(medias, avatar_data):
@@ -159,13 +162,16 @@ def add_media(medias, avatar_data):
 
 def photo(chat_id, user):
     medias = []
-    user.delete_message = len(medias)
-    user.save(update_fields=['delete_message'])
     for i in user.avatars.all()[:3]:
         medias = add_media(medias, i.file_id)
     bot.send_media_group(chat_id=chat_id, media=medias)
-    bot.send_message(chat_id=chat_id, text='Изменить фото/видео,',
+    msg = bot.send_message(chat_id=chat_id, text='Изменить фото/видео,',
                      reply_markup=buttons.edit_photo())
+    n = ''
+    for i in msg:
+        n += f'{i.id},'
+    user.delete_message = n
+    user.save(update_fields=['delete_message'])
 
 
 def verefi(message, chat_id, user, simbol):

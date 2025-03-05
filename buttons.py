@@ -74,6 +74,7 @@ def menu(user):
                                         callback_data='profiles|watch_like')
     edit_filter = types.InlineKeyboardButton('Настроить поиск 🔍', callback_data='filter')
     verefi = types.InlineKeyboardButton('Подтверждение анкеты ✅', callback_data='edit_profile|verefi')
+    my_active = types.InlineKeyboardButton('Моя активность', callback_data='my_active')
     edit_profile = types.InlineKeyboardButton('Настроить анкету ⚙️', callback_data='edit_profile')
     markup.add(watch, create, edit_filter, verefi, edit_profile)
     return markup

@@ -98,14 +98,17 @@ def send_questionnaires(chat_id, user):
                 else:
                     medias = send_ad_photo(ad)
                     user.last_ad_time = timezone.now()
-                    user.delete_message = len(medias)
-                    user.save(update_fields=['last_ad_time', 'delete_message'])
                     ad.view += 1
                     if ad.max_view and ad.max_view <= ad.view:
                         ad.is_active = False
                     ad.save(update_fields=['view', 'is_active'])
                     if medias:
-                        bot.send_media_group(chat_id=chat_id, media=medias)
+                        msg = bot.send_media_group(chat_id=chat_id, media=medias)
+                        n = ''
+                        for i in msg:
+                            n += f'{i.id},'
+                        user.delete_message = n
+                        user.save(update_fields=['delete_message', 'last_ad_time'])
                     bot.send_message(chat_id=chat_id, text=ad.text, reply_markup=buttons.watch_questionnaire(), parse_mode='HTML')
                     n = False
             else:
@@ -144,11 +147,13 @@ def send_profile(chat_id, user, markup):
         msg = bot.send_media_group(chat_id=chat_id, media=medias)
     except Exception:
         pass
-    usr = User.objects.get(chat_id=chat_id)
-    n = len(medias)
+    bot.send_message(chat_id=chat_id, text=text, reply_markup=markup)
+    usr = User.objects.filter(chat_id=chat_id).first()
+    n = ''
+    for i in msg:
+        n += f'{i.id},'
     usr.delete_message = n
     usr.save(update_fields=['delete_message'])
-    bot.send_message(chat_id=chat_id, text=text, reply_markup=markup)
 
 
 def send_message_to_questionnaire(questionnaire):
@@ -230,10 +235,12 @@ def report_step_two(message, chat_id, user, reprot_user, type):
 
 
 def report_step_one(message, chat_id, user, user_id):
-    if message.content_type == 'text' and message.text in ['Нежелательный сексуальный контент🔞', 'Скам, мошенничество',
+    if message.content_type == 'text' and message.text in ['Нежелательный сексуальный контент🔞', 'Скам, мошенничество🏴‍☠️',
                                                            'Навязчивая реклама 🤬', 'Оскорбление, буллинг⛔️',
                                                            'Экстремизм, расизм🗿']:
         type = message.text
+        if type == 'Назад ◀️':
+            send_questionnaires(chat_id=chat_id, user=user)
         report_user = User.objects.filter(chat_id=user_id).first()
         if user:
             msg = bot.send_message(chat_id=chat_id, text='Опиши причину твоей жалобы')
@@ -274,19 +281,40 @@ def answer_dislike(chat_id, user_id):
             i.delete()
     watch_like(questionnaire_chat_id=chat_id, questionnaire=questionnaire)
 
+def calculate_active(user):
+    from_age, to_age = map(int, user.find_age.split('-'))
+    age = [i for i in range(from_age, to_age + 1)]
+    find_gender = [user.find_gender]
+    if find_gender[0] == 'любой':
+        find_gender = ['мужской', 'женский']
+    user_find_gender = [user.gender, 'любой']
+    users = User.objects.filter(age__in=age, gender__in=find_gender, active=True,
+                                find_gender__in=user_find_gender)
+    n = 0
+    for usr in users:
+        if is_point_in_circle(latitude=usr.latitude, longitude=usr.longitude,
+                                  circle_center_latitude=user.latitude,
+                                  circle_center_longitude=user.longitude):
+            n += 1
+    user.active_score += round(1*(100/n),2)
+    user.save(update_field=['active_score'])
+
 
 def callback(data, chat_id, user):
     if len(data) == 0:
         send_questionnaires(chat_id=chat_id, user=user)
     elif data[0] == 'like':
+        calculate_active(user)
         add_action('лайк', user, data[1])
         like(chat_id=chat_id, user=user, questionnaire_chat_id=data[1])
     elif data[0] == 'dislike':
+        calculate_active(user)
         add_action('дизлайк', user, data[1])
         send_questionnaires(chat_id=chat_id, user=user)
     elif data[0] == 'sleep':
         profile_menu(chat_id=chat_id, user=user)
     elif data[0] == 'send_message_or_video':
+        calculate_active(user)
         add_action('лайк', user, data[1])
         msg = bot.send_message(chat_id=chat_id,
                                text='Отправь сообщение. Это может быть текст, фотография, видео, кружочек или голосовое')

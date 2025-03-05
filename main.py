@@ -7,6 +7,7 @@ import time
 import django
 import telebot
 from PIL.ImagePalette import random
+from django.db.models import Avg
 from django.utils import timezone
 from telebot import types
 
@@ -19,10 +20,12 @@ import registration
 from const import bot
 from menu import menu
 from registration import enter_name
+from users.state import statistics
+import schedule
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'DavinCHBot.settings')
 django.setup()
-from users.models import User, Status, Ad, Links
+from users.models import User, Status, Ad, Links, State, BotActive
 from django.contrib.auth.models import Group
 
 Group.objects.get_or_create(name='бан профиля')
@@ -106,6 +109,15 @@ def answer_on_message(message):
         menu(chat_id, user)
 
 
+def calculate_active_time(user):
+    now_time = timezone.now()
+    second_time = max(1, int((user.last_active - now_time).timestamp()))
+    if second_time < 150:
+        user.active_time += second_time
+        user.save(update_field=['active_time'])
+    user.update_last_active()
+
+
 @bot.callback_query_handler(func=lambda call: True)
 def callback(call):
     message_id = call.message.id
@@ -127,8 +139,16 @@ def callback(call):
     elif user.is_ban:
         bot.send_message(chat_id=chat_id, text='Вы забанены')
     else:
-        # user.update_last_active()
+        calculate_active_time(user)
+        bot_active, _ = BotActive.objects.get_or_create(
+            date=timezone.now().today())
+        if user not in bot_active.users:
+            bot_active.users.add(user)
         if call.message:
+            try:
+                bot.delete_message(chat_id=chat_id, message_id=message_id)
+            except Exception:
+                pass
             bot.clear_step_handler_by_chat_id(chat_id=chat_id)
             data = call.data.split('|')
             if data[0] == 'menuAfterLike':
@@ -138,16 +158,16 @@ def callback(call):
                 return
 
             try:
-                message_ids = []
-                for i in range(user.delete_message + 1):
-                    message_ids.append(message_id - i)
-                try:
-                    bot.delete_messages(chat_id=chat_id, message_ids=message_ids)
-                except Exception as e:
-                    pass
-                user.delete_message = 0
-                user.save(update_fields=['delete_message'])
-            except Exception:
+                if user.delete_message:
+                    delete_message = user.delete_message.split(',')
+                    for i in delete_message:
+                        try:
+                            bot.delete_message(chat_id=chat_id, message_id=i)
+                        except Exception:
+                            pass
+                    user.delete_message = ''
+                    user.save(update_fields=['delete_message'])
+            except Exception as e:
                 pass
             msg = bot.send_message(chat_id=chat_id, text='.', reply_markup=types.ReplyKeyboardRemove())
             bot.delete_message(chat_id=chat_id, message_id=msg.id)
@@ -168,6 +188,8 @@ def callback(call):
                 msg = bot.send_message(chat_id=chat_id, text='Отправь фотографию/видео',
                                        reply_markup=buttons.go_back('edit_profile|photo'))
                 bot.register_next_step_handler(msg, registration.edit_photo, chat_id, user, data[1])
+            elif data[0] == 'my_active':
+                bot.send_message(chat_id=chat_id, text=f'Статус вашей активности: {user.active_status()}', reply_markup=buttons.go_to_menu())
 
 
 def status():
@@ -185,9 +207,57 @@ def status():
         time.sleep(60 * 60 * 4)
 
 
+def create_state():
+    all_users = User.objects.all()
+    users_count = all_users.count()
+    ban_users_count = all_users.filter(is_ban=True).count()
+    active_users_count = all_users.filter(active=True).count()
+    verefi_users_count = all_users.filter(is_checked=True).count()
+    female_count = all_users.filter(gender='женский').count()
+    male_count = all_users.filter(gender='мужской').count()
+    active_female_count = all_users.filter(active=True).filter(gender='женский').count()
+    active_male_count = all_users.filter(active=True).filter(gender='мужской').count()
+    average_active_time = User.objects.aggregate(Avg('active_time'))['active_time__avg']
+    average_active_score = User.objects.aggregate(Avg('active_score'))['active_score__avg']
+    file = statistics()
+    bot_active, _ = BotActive.objects.get_or_create(
+        date=timezone.now().today())
+    day_online = bot_active.users.count()
+    date = timezone.now().today()
+    file.save(f'state/{date}.xlsx')
+    State.objects.create(
+        users_count=users_count,
+        ban_users_count=ban_users_count,
+        active_users_count=active_users_count,
+        verefi_users_count=verefi_users_count,
+        female_count=female_count,
+        male_count=male_count,
+        active_female_count=active_female_count,
+        active_male_count=active_male_count,
+        average_active_time=average_active_time,
+        average_active_score=average_active_score,
+        day_online=day_online
+    )
+    for user in all_users:
+        user.active_time = 0
+        if user.is_checked:
+            user.active_score = min(0, user.active_score - 15)
+        else:
+            user.active_score = min(0, user.active_score - 25)
+        user.save(update_fields=['active_time', 'active_score'])
+    time.sleep(1)
+
+
+def state():
+    schedule.every().day.at("23:59").do(create_state)
+    while True:
+        schedule.run_pending()
+        time.sleep(30)
 
 
 if __name__ == '__main__':
     polling_thread1 = threading.Thread(target=status)
     polling_thread1.start()
+    polling_thread2 = threading.Thread(target=state)
+    polling_thread2.start()
     bot.infinity_polling(timeout=50, long_polling_timeout=25)

@@ -197,8 +197,8 @@
                 <div class="filters">
                     <select id="sorting" name="sorting">
                         <option value="">Сортировка</option>
-                        <option value="last_active">Сортировка по активности ↑</option>
-                        <option value="-last_active">Сортировка по активности ↓</option>
+                        <option value="active_score">Сортировка по активности ↑</option>
+                        <option value="-active_score">Сортировка по активности ↓</option>
                         <option value="registration_date">Сортировка по дате регистрации ↑</option>
                         <option value="-registration_date">Сортировка по дате регистрации ↓</option>
                         <option value="like_users_count">Сортировка по кол-ву мэтчей ↑</option>
@@ -264,6 +264,8 @@
                         <p>Категория: {{ user.category }}</p>
                         <p>Описание: {{ user.description }}</p>
                         <p>Активен ли пользователь: {% if user.active %}Да{% else %}Нет{% endif %}</p>
+                        <p>Статус активности: {{user.active_status}}</p>
+                        <p>Время в онлане за сегодня: {{ user.active_time }}</p>
                         <p>Мэтчи: {{ user.like_users.all.count }}</p>
                         <p>Верификация: {{ user.check_verefi }}</p>
                         <p>Статус: {{ user.check_ban }}</p>

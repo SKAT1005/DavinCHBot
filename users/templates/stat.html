@@ -86,6 +86,10 @@
     </div>
 
     <div class="main-content">
+        <form>
+                    <input type="date" id="contact-date" name="date" required>
+                    <button type="submit">Получить статистику за эту дату</button>
+                </form>
         <h2>Статистика</h2>
         <div class="stats-container">
             <form method="post">
@@ -131,6 +135,28 @@
                             <h3>Кол-во активных женских аккаунтов</h3>
                             <p>{{ active_female_count }}</p>
                         </div>
+
+                        <div class="stat-card">
+                            <h3>Среднее время активности в боте: </h3>
+                            <p>{{ average_active_time }} минут</p>
+                        </div>
+
+                        <div class="stat-card">
+                            <h3>Средняя активность в боте</h3>
+                            <p>{{ average_active_time }}</p>
+                        </div>
+
+                        <div class="stat-card">
+                            <h3>Онлайн в день</h3>
+                            <p>{{ day_online }}</p>
+                        </div>
+
+                        {% if active_now %}
+                            <div class="stat-card">
+                                <h3>Активных пользователей на данный момент</h3>
+                                <p>{{ active_now }}</p>
+                            </div>
+                        {% endif %}
                         <p>
                             <button type="submit">Получить полную статистику</button>
                         </p>

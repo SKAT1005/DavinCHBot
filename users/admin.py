@@ -1,9 +1,14 @@
 from django.contrib import admin
-from .models import User, Report, Logs, Status
+from .models import User, Report, Logs, Status, State
 
 
 @admin.register(Status)
 class Status(admin.ModelAdmin):
+    pass
+
+
+@admin.register(State)
+class State(admin.ModelAdmin):
     pass
 
 

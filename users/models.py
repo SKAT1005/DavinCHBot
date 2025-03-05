@@ -24,11 +24,13 @@ class User(models.Model):
     latitude = models.FloatField(default=1, verbose_name='Широта')
     longitude = models.FloatField(default=1, verbose_name='Долгота')
     active = models.BooleanField(default=False, verbose_name='Активен ли поиск')
-    delete_message = models.IntegerField(default=0, verbose_name='Сколько сообщений удалить?')
+    delete_message = models.TextField(blank=True, null=True, verbose_name='Сколько сообщений удалить?')
     registration_date = models.DateTimeField(auto_now_add=True, verbose_name='Дата регистрации')
     like_users = models.ManyToManyField('LikeUsers', blank=True,
                                         verbose_name='Пользователи, которые лайкнули анкету')
     last_active = models.DateTimeField(default=None, null=True, verbose_name='Время последней активности')
+    active_time = models.IntegerField(default=0, verbose_name='Время активности в боте за последние 24 часа')
+    active_score = models.FloatField(default=50, verbose_name='Баллы активности в боте')
     last_ad_time = models.DateTimeField(default=None, null=True, verbose_name='Время просмотра последней рекламы')
     last_like = models.DateTimeField(default=None, null=True, verbose_name='Время последней отправки сообщения о лайках')
     is_checked = models.BooleanField(default=False, verbose_name='Проеверен ли аккаунт')
@@ -37,6 +39,18 @@ class User(models.Model):
     is_ban = models.BooleanField(default=False, verbose_name='В бане ли аккаунт')
     add_photo = models.CharField(max_length=16, default='step 1', verbose_name='Добавляют ли фото')
     get_photo_id = models.BooleanField(default=False, verbose_name='Получает ли пользователь id фотографий?')
+
+
+
+    def active_status(self):
+        if self.active_score < 25:
+            return 'Не активен'
+        elif self.active_score < 50:
+            return 'Низкая активность'
+        elif self.active_score < 75:
+            return 'Средняя активность'
+        else:
+            return 'Высокая активность'
 
     def update_last_active(self):
         self.last_active = timezone.now()
@@ -138,3 +152,24 @@ class Logs(models.Model):
 class Links(models.Model):
     name = models.CharField(max_length=128, verbose_name='Название ссылки')
     user_count = models.IntegerField(default=0, verbose_name='Количество пользователей')
+
+
+class BotActive(models.Model):
+    date = models.DateField(verbose_name='Дата')
+    users = models.ManyToManyField('User', blank=True, on_delete=models.PROTECT, related_name='zxc', verbose_name='Пользователи')
+
+
+class State(models.Model):
+    date = models.DateField(auto_now_add=True, verbose_name='Дата статистики')
+    users_count = models.IntegerField(verbose_name='Кол-во пользователей')
+    ban_users_count = models.IntegerField(verbose_name='Кол-во забаненых анкет')
+    active_users_count = models.IntegerField(verbose_name='Кол-во активных анкет')
+    verefi_users_count = models.IntegerField(verbose_name='Кол-во подтвержденных')
+    female_count = models.IntegerField(verbose_name='Кол-во женщин')
+    male_count = models.IntegerField(verbose_name='Кол-во мужчин')
+    active_male_count = models.IntegerField(verbose_name='Кол-во активных мужских аккаунтов')
+    active_female_count = models.IntegerField(verbose_name='Кол-во активных женских аккаунтов')
+    average_active_time = models.IntegerField(verbose_name='Среднее время активности в боте')
+    average_active_score = models.IntegerField(verbose_name='Средний бал активности в боте')
+    day_online = models.IntegerField(verbose_name='Сколько людей пользовалось ботом')
+    file = models.FileField(verbose_name='Файл полной статистики')

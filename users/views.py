@@ -9,7 +9,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import authenticate, login
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
-from django.db.models import Q, Count
+from django.db.models import Q, Count, Avg
 from django.http import HttpResponse
 from django.shortcuts import render, HttpResponseRedirect, redirect
 from django.utils import timezone
@@ -20,7 +20,8 @@ from buttons import questionnaire_menu
 from const import bot
 from coord import get_coord_by_name
 from users import state
-from users.models import User, Report, Ad, Photo, Logs
+from users.models import User, Report, Ad, Photo, Logs, State, BotActive
+from users.state import statistics
 
 
 def create_logs(user, action):
@@ -194,15 +195,38 @@ class StateView(View):
             return HttpResponseRedirect('/')
         elif not request.user.groups.filter(name='статистика'):
             return HttpResponseRedirect('/profiles')
-        all_users = User.objects.all()
-        users_count = all_users.count()
-        ban_users_count = all_users.filter(is_ban=True).count()
-        active_users_count = all_users.filter(active=True).count()
-        verefi_users_count = all_users.filter(is_checked=True).count()
-        female_count = all_users.filter(gender='женский').count()
-        male_count = all_users.filter(gender='мужской').count()
-        active_female_count = all_users.filter(active=True).filter(gender='женский').count()
-        active_male_count = all_users.filter(active=True).filter(gender='мужской').count()
+        date = request.GET.get('date')
+        state = State.objects.filter(date=date)
+        if date and state:
+            state = state.first()
+            users_count = state.users_count
+            ban_users_count = state.ban_users_count
+            active_users_count = state.active_users_count
+            verefi_users_count = state.verefi_users_count
+            female_count = state.female_count
+            male_count = state.male_count
+            active_female_count = state.active_female_count
+            active_male_count = state.active_male_count
+            average_active_time = state.average_active_time
+            average_active_score = state.average_active_score
+            day_online = state.day_online
+            active_now = False
+        else:
+            all_users = User.objects.all()
+            users_count = all_users.count()
+            ban_users_count = all_users.filter(is_ban=True).count()
+            active_users_count = all_users.filter(active=True).count()
+            verefi_users_count = all_users.filter(is_checked=True).count()
+            female_count = all_users.filter(gender='женский').count()
+            male_count = all_users.filter(gender='мужской').count()
+            active_female_count = all_users.filter(active=True).filter(gender='женский').count()
+            active_male_count = all_users.filter(active=True).filter(gender='мужской').count()
+            average_active_time = User.objects.aggregate(Avg('active_time'))['active_time__avg']
+            average_active_score = User.objects.aggregate(Avg('active_score'))['active_score__avg']
+            bot_active, _ = BotActive.objects.get_or_create(
+                date=timezone.now().today())
+            day_online = bot_active.users.count()
+            active_now = sum(1 for user in all_users if time.time() - user.last_active.timestamp() < 150)
         return render(request, 'stat.html', context={
             'users_count': users_count,
             'ban_users_count': ban_users_count,
@@ -211,24 +235,56 @@ class StateView(View):
             'female_count': female_count,
             'male_count': male_count,
             'active_female_count': active_female_count,
-            'active_male_count': active_male_count
+            'active_male_count': active_male_count,
+            'average_active_time': average_active_time,
+            'average_active_score': average_active_score,
+            'active_now': active_now,
+            'day_online': day_online
         })
 
     def post(self, request):
-        wb = state.statistics()
-        buffer = BytesIO()
-        wb.save(buffer)
-        buffer.seek(0)
-        file_data = buffer.read()
+        date_str = request.GET.get('date')
+
+        if date_str:
+            try:
+                date = timezone.datetime.strptime(date_str, '%Y-%m-%d').date()  # Преобразуем строку даты в объект date
+                state = State.objects.filter(date=date)
+                if state.exists():  # Проверяем, что state не пустой
+                    state_obj = state.first()
+                    buffer = state_obj.file  # Предполагается, что поле file содержит FileField
+                    filename = buffer.name
+                    file_data = buffer.read()  # Читаем данные из файла
+                    content_length = buffer.size  # Получаем размер файла из FileField
+                else:
+                    # Обработка случая, когда state не найден для данной даты
+                    wb = statistics()  # Предполагается, что statistics() - это метод класса State, а не queryset.
+                    buffer = BytesIO()
+                    wb.save(buffer)
+                    buffer.seek(0)
+                    now = timezone.now()
+                    filename = f"Statistics {now.day}-{now.month}-{now.year}.xlsx"
+                    file_data = buffer.read()
+                    content_length = buffer.getbuffer().nbytes
+
+            except ValueError:
+                # Обработка ошибки, если формат даты неверный
+                return HttpResponse("Invalid date format.  Use YYYY-MM-DD.", status=400)
+        else:
+            # Обработка случая, когда параметр date не предоставлен
+            wb = statistics()
+            buffer = BytesIO()
+            wb.save(buffer)
+            buffer.seek(0)
+            now = timezone.now()
+            filename = f"Statistics {now.day}-{now.month}-{now.year}.xlsx"
+            file_data = buffer.read()
+            content_length = buffer.getbuffer().nbytes
+
         response = HttpResponse(file_data,
                                 content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-        date = timezone.now()
-        filename = f"Statistics {date.day}-{date.month}-{date.year}.xlsx"
         encoded_filename = urllib.parse.quote(filename)
-
         response['Content-Disposition'] = f'attachment; filename="{filename}"; filename*=UTF-8\'\'{encoded_filename}'
-
-        response['Content-Length'] = buffer.getbuffer().nbytes
+        response['Content-Length'] = content_length
         return response
 
 def verefi(request):

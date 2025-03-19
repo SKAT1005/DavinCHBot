@@ -7,7 +7,6 @@ dadata = Dadata(token, secret)
 
 def get_city_by_coord(latitude, longitude):
     result = dadata.geolocate(name="address", lat=latitude, lon=longitude, count=1, radius_meters=1000000000)
-    print(result)
     if result:
         result = result[0]
         try:

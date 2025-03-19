@@ -74,9 +74,9 @@ def menu(user):
                                         callback_data='profiles|watch_like')
     edit_filter = types.InlineKeyboardButton('Настроить поиск 🔍', callback_data='filter')
     verefi = types.InlineKeyboardButton('Подтверждение анкеты ✅', callback_data='edit_profile|verefi')
-    my_active = types.InlineKeyboardButton('Моя активность', callback_data='my_active')
+    my_active = types.InlineKeyboardButton('Моя активность ⚡️', callback_data='my_active')
     edit_profile = types.InlineKeyboardButton('Настроить анкету ⚙️', callback_data='edit_profile')
-    markup.add(watch, create, edit_filter, verefi, edit_profile)
+    markup.add(watch, create, edit_filter, verefi, my_active ,edit_profile)
     return markup
 
 
@@ -121,6 +121,14 @@ def questionnaire_menu(user_id):
 def watch_questionnaire():
     markup = types.InlineKeyboardMarkup(row_width=1)
     watch = types.InlineKeyboardButton('Продолжить смотреть анкты', callback_data='profiles')
+    menu = types.InlineKeyboardButton('В меню', callback_data='menu')
+    markup.add(watch, menu)
+    return markup
+
+
+def watch_questionnaire_after_ad():
+    markup = types.InlineKeyboardMarkup(row_width=1)
+    watch = types.InlineKeyboardButton('Продолжить смотреть анкты', callback_data='profiles_ad')
     menu = types.InlineKeyboardButton('В меню', callback_data='menu')
     markup.add(watch, menu)
     return markup

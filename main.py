@@ -81,6 +81,19 @@ def start(message):
     elif user.add_photo == 'step 2':
         pass
     else:
+        try:
+            if user.delete_message:
+                delete_message = user.delete_message.split(',')[:-1]
+                for i in delete_message:
+                    try:
+                        bot.delete_message(chat_id=chat_id, message_id=i)
+                    except Exception:
+                        pass
+                bot.delete_message(chat_id=chat_id, message_id=int(delete_message[-1]) + 1)
+                user.delete_message = ''
+                user.save(update_fields=['delete_message'])
+        except Exception as e:
+            pass
         menu(chat_id, user)
 
 
@@ -111,10 +124,10 @@ def answer_on_message(message):
 
 def calculate_active_time(user):
     now_time = timezone.now()
-    second_time = max(1, int((user.last_active - now_time).timestamp()))
+    second_time = max(1, int((user.last_active - now_time).total_seconds()))
     if second_time < 150:
         user.active_time += second_time
-        user.save(update_field=['active_time'])
+        user.save(update_fields=['active_time'])
     user.update_last_active()
 
 
@@ -123,7 +136,7 @@ def callback(call):
     message_id = call.message.id
     chat_id = call.message.chat.id
     user = User.objects.filter(chat_id=call.from_user.id).first()
-    username = call.message.from_user.username
+    username = call.from_user.username
     if not user:
         try:
             bot.delete_message(chat_id=chat_id, message_id=message_id)
@@ -133,45 +146,46 @@ def callback(call):
         bot.clear_step_handler_by_chat_id(chat_id=chat_id)
         msg = bot.send_message(chat_id=chat_id, text='Укажи свое имя', reply_markup=None)
         bot.register_next_step_handler(msg, enter_name, chat_id)
-    elif username != user.username:
-        user.username = username
-        user.save(update_fields=['username'])
     elif user.is_ban:
         bot.send_message(chat_id=chat_id, text='Вы забанены')
     else:
         calculate_active_time(user)
         bot_active, _ = BotActive.objects.get_or_create(
             date=timezone.now().today())
-        if user not in bot_active.users:
+        if username != user.username:
+            user.username = username
+            user.save(update_fields=['username'])
+        if user not in bot_active.users.all():
             bot_active.users.add(user)
         if call.message:
-            try:
-                bot.delete_message(chat_id=chat_id, message_id=message_id)
-            except Exception:
-                pass
             bot.clear_step_handler_by_chat_id(chat_id=chat_id)
             data = call.data.split('|')
-            if data[0] == 'menuAfterLike':
-                user.add_photo = 'step 3'
-                user.save(update_fields=['add_photo'])
-                menu(chat_id=chat_id, user=user)
-                return
-
             try:
-                if user.delete_message:
-                    delete_message = user.delete_message.split(',')
+                if data[0] not in ['menuAfterLike', 'profiles_ad']:
+                    bot.delete_message(chat_id=chat_id, message_id=message_id)
+            except Exception:
+                pass
+            try:
+                if user.delete_message and data[0] not in ['menuAfterLike', 'profiles_ad']:
+                    delete_message = user.delete_message.split(',')[:-1]
                     for i in delete_message:
                         try:
                             bot.delete_message(chat_id=chat_id, message_id=i)
                         except Exception:
                             pass
+                    bot.delete_message(chat_id=chat_id, message_id=int(delete_message[-1]) + 1)
                     user.delete_message = ''
                     user.save(update_fields=['delete_message'])
             except Exception as e:
                 pass
             msg = bot.send_message(chat_id=chat_id, text='.', reply_markup=types.ReplyKeyboardRemove())
-            bot.delete_message(chat_id=chat_id, message_id=msg.id)
-            if data[0] == 'menu':
+            bot.delete_message(chat_id, msg.id)
+            # if datetime.datetime.now().timestamp() - call.message.date > 150:
+            #     user.add_photo = 'step 3'
+            #     user.save(update_fields=['add_photo'])
+            #     bot.send_message(chat_id=chat_id, text='Время действия интерфейса истекло, вы были перенесены в главное меню')
+            #     menu(chat_id=chat_id, user=user)
+            if data[0] in ['menu', 'menuAfterLike']:
                 user.add_photo = 'step 3'
                 user.save(update_fields=['add_photo'])
                 menu(chat_id=chat_id, user=user)
@@ -179,7 +193,7 @@ def callback(call):
                 filter.callback(data=data[1:], user=user, chat_id=chat_id)
             elif data[0] == 'edit_profile':
                 profile.callback(data=data[1:], user=user, chat_id=chat_id)
-            elif data[0] == 'profiles':
+            elif data[0] in ['profiles', 'profiles_ad']:
                 if not user.active:
                     user.active = True
                     user.save(update_fields=['active'])
@@ -189,7 +203,17 @@ def callback(call):
                                        reply_markup=buttons.go_back('edit_profile|photo'))
                 bot.register_next_step_handler(msg, registration.edit_photo, chat_id, user, data[1])
             elif data[0] == 'my_active':
-                bot.send_message(chat_id=chat_id, text=f'Статус вашей активности: {user.active_status()}', reply_markup=buttons.go_to_menu())
+                text = f"""
+Текущая активность:\n
+{user.active_status()}\n\n
+Как повысить активность? 🤔\n\n
+
+1. Пройдите верификацию вашей анкеты ✅
+2. «Средняя активность 🟡» начисляется при регистрации и сохраняется при верификации вашей анкеты в дальнейшем 🙏
+2. Ежедневно лайкайте минимум 10 анкет для достижения статуса «Высокая активность 🟢»
+                """
+                bot.send_message(chat_id=chat_id, text=text,
+                                 reply_markup=buttons.go_back('menu'))
 
 
 def status():
@@ -205,6 +229,14 @@ def status():
             if n <= m:
                 i.delete()
         time.sleep(60 * 60 * 4)
+
+
+def like_count():
+    while True:
+        for user in User.objects.all():
+            user.like_count = 40
+            user.save(update_fields=['like_count'])
+        time.sleep(60 * 60 * 3)
 
 
 def create_state():
@@ -241,15 +273,15 @@ def create_state():
     for user in all_users:
         user.active_time = 0
         if user.is_checked:
-            user.active_score = min(0, user.active_score - 15)
+            user.active_score = min(100, max(0, user.active_score - 15))
         else:
-            user.active_score = min(0, user.active_score - 25)
+            user.active_score = min(100, max(0, user.active_score - 25))
         user.save(update_fields=['active_time', 'active_score'])
     time.sleep(1)
 
 
 def state():
-    schedule.every().day.at("23:59").do(create_state)
+    schedule.every().day.at("23:24").do(create_state)
     while True:
         schedule.run_pending()
         time.sleep(30)
@@ -260,4 +292,6 @@ if __name__ == '__main__':
     polling_thread1.start()
     polling_thread2 = threading.Thread(target=state)
     polling_thread2.start()
+    polling_thread3 = threading.Thread(target=like_count)
+    polling_thread3.start()
     bot.infinity_polling(timeout=50, long_polling_timeout=25)

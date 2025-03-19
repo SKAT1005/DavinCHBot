@@ -28,8 +28,11 @@ def menu(chat_id, user):
     except Exception:
         pass
     n = ''
-    for i in msg:
-        n += f'{i.id},'
+    try:
+        for i in msg:
+            n += f'{i.id},'
+    except Exception:
+        pass
     user.delete_message = n
     user.save(update_fields=['delete_message'])
     bot.send_message(chat_id=chat_id, text=text, reply_markup=buttons.menu(user=user))

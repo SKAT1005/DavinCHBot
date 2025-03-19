@@ -208,7 +208,12 @@
                 <div class="filters">
                     <p>Возраст </p>
                     <input type="text" id="age" name="age" placeholder="18-25">
-                    <p>Показывать фейки</p><input type="checkbox" name="is_fake">
+                    <p>Показывать фейки</p>
+                    <input type="checkbox" name="is_fake">
+
+                    <p>Пустые анкеты</p>
+                    <input type="checkbox" name="no_photo">
+
                     <select id="gender" name="gender">
                         <option value="">Пол</option>
                         <option value="мужской">Мужской</option>
@@ -263,9 +268,9 @@
                         <p>Город пользователя: {{ user.city }}</p>
                         <p>Категория: {{ user.category }}</p>
                         <p>Описание: {{ user.description }}</p>
-                        <p>Активен ли пользователь: {% if user.active %}Да{% else %}Нет{% endif %}</p>
-                        <p>Статус активности: {{user.active_status}}</p>
-                        <p>Время в онлане за сегодня: {{ user.active_time }}</p>
+                        <p>Включен ли профиль: {% if user.active %}Да{% else %}Нет{% endif %}</p>
+                        <p>Статус активности: {{user.active_status}} ({{ user.active_score }})</p>
+                        <p>Время в онлане за сегодня: {{ user.active_time }} секунд</p>
                         <p>Мэтчи: {{ user.like_users.all.count }}</p>
                         <p>Верификация: {{ user.check_verefi }}</p>
                         <p>Статус: {{ user.check_ban }}</p>

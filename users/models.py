@@ -39,18 +39,17 @@ class User(models.Model):
     is_ban = models.BooleanField(default=False, verbose_name='В бане ли аккаунт')
     add_photo = models.CharField(max_length=16, default='step 1', verbose_name='Добавляют ли фото')
     get_photo_id = models.BooleanField(default=False, verbose_name='Получает ли пользователь id фотографий?')
-
-
+    like_count = models.IntegerField(default=40, verbose_name='Количество лайков пользователя')
 
     def active_status(self):
         if self.active_score < 25:
-            return 'Не активен'
+            return 'Очень низкая ⚫️'
         elif self.active_score < 50:
-            return 'Низкая активность'
+            return 'Низкая 🔴'
         elif self.active_score < 75:
-            return 'Средняя активность'
+            return 'Средняя 🟡'
         else:
-            return 'Высокая активность'
+            return 'Высокая 🟢'
 
     def update_last_active(self):
         self.last_active = timezone.now()
@@ -156,7 +155,7 @@ class Links(models.Model):
 
 class BotActive(models.Model):
     date = models.DateField(verbose_name='Дата')
-    users = models.ManyToManyField('User', blank=True, on_delete=models.PROTECT, related_name='zxc', verbose_name='Пользователи')
+    users = models.ManyToManyField('User', blank=True, related_name='zxc', verbose_name='Пользователи')
 
 
 class State(models.Model):

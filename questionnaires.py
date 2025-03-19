@@ -48,7 +48,7 @@ def get_user(user):
         find_gender = ['мужской', 'женский']
     user_find_gender = [user.gender, 'любой']
     users = User.objects.filter(age__in=age, gender__in=find_gender, category__in=category, active=True,
-                                find_gender__in=user_find_gender)
+                                find_gender__in=user_find_gender).order_by('-active_score')
     for usr in users:
         find_age = list(map(int, usr.find_age.split('-')))
         if find_age[0] <= user.age <= find_age[1]:
@@ -58,7 +58,7 @@ def get_user(user):
                                       circle_center_longitude=user.longitude):
                     return usr
     users = User.objects.filter(age__in=age, gender__in=find_gender, active=True,
-                                find_gender__in=user_find_gender)
+                                find_gender__in=user_find_gender).order_by('-active_score')
     for usr in users:
         if not Status.objects.filter(to_user=usr, form_user=user) and usr != user:
             if is_point_in_circle(latitude=usr.latitude, longitude=usr.longitude,
@@ -109,7 +109,8 @@ def send_questionnaires(chat_id, user):
                             n += f'{i.id},'
                         user.delete_message = n
                         user.save(update_fields=['delete_message', 'last_ad_time'])
-                    bot.send_message(chat_id=chat_id, text=ad.text, reply_markup=buttons.watch_questionnaire(), parse_mode='HTML')
+                    bot.send_message(chat_id=chat_id, text=ad.text, reply_markup=buttons.watch_questionnaire_after_ad(),
+                                     parse_mode='HTML')
                     n = False
             else:
                 n = False
@@ -150,10 +151,13 @@ def send_profile(chat_id, user, markup):
     bot.send_message(chat_id=chat_id, text=text, reply_markup=markup)
     usr = User.objects.filter(chat_id=chat_id).first()
     n = ''
-    for i in msg:
-        n += f'{i.id},'
-    usr.delete_message = n
-    usr.save(update_fields=['delete_message'])
+    try:
+        for i in msg:
+            n += f'{i.id},'
+        usr.delete_message = n
+        usr.save(update_fields=['delete_message'])
+    except Exception:
+        pass
 
 
 def send_message_to_questionnaire(questionnaire):
@@ -235,7 +239,8 @@ def report_step_two(message, chat_id, user, reprot_user, type):
 
 
 def report_step_one(message, chat_id, user, user_id):
-    if message.content_type == 'text' and message.text in ['Нежелательный сексуальный контент🔞', 'Скам, мошенничество🏴‍☠️',
+    if message.content_type == 'text' and message.text in ['Нежелательный сексуальный контент🔞',
+                                                           'Скам, мошенничество🏴‍☠️',
                                                            'Навязчивая реклама 🤬', 'Оскорбление, буллинг⛔️',
                                                            'Экстремизм, расизм🗿']:
         type = message.text
@@ -281,6 +286,7 @@ def answer_dislike(chat_id, user_id):
             i.delete()
     watch_like(questionnaire_chat_id=chat_id, questionnaire=questionnaire)
 
+
 def calculate_active(user):
     from_age, to_age = map(int, user.find_age.split('-'))
     age = [i for i in range(from_age, to_age + 1)]
@@ -293,32 +299,53 @@ def calculate_active(user):
     n = 0
     for usr in users:
         if is_point_in_circle(latitude=usr.latitude, longitude=usr.longitude,
-                                  circle_center_latitude=user.latitude,
-                                  circle_center_longitude=user.longitude):
+                              circle_center_latitude=user.latitude,
+                              circle_center_longitude=user.longitude):
             n += 1
-    user.active_score += round(1*(100/n),2)
-    user.save(update_field=['active_score'])
+    user.active_score += max(round(1 * (100 / n), 2), 1)
+    user.save(update_fields=['active_score'])
 
 
 def callback(data, chat_id, user):
     if len(data) == 0:
         send_questionnaires(chat_id=chat_id, user=user)
     elif data[0] == 'like':
-        calculate_active(user)
-        add_action('лайк', user, data[1])
-        like(chat_id=chat_id, user=user, questionnaire_chat_id=data[1])
+        if user.like_count == 0:
+            bot.send_message(chat_id=chat_id,
+                             text='К сожаленю ваш лайки закончились. Возвращайтесь через некоторое время',
+                             reply_markup=buttons.go_back('menu'))
+        else:
+            user.like_count -= 1
+            user.save(update_fields=['like_count'])
+            calculate_active(user)
+            add_action('лайк', user, data[1])
+            like(chat_id=chat_id, user=user, questionnaire_chat_id=data[1])
     elif data[0] == 'dislike':
-        calculate_active(user)
-        add_action('дизлайк', user, data[1])
-        send_questionnaires(chat_id=chat_id, user=user)
+        if user.like_count == 0:
+            bot.send_message(chat_id=chat_id,
+                             text='К сожаленю ваш лайки закончились. Возвращайтесь через некоторое время',
+                             reply_markup=buttons.go_back('menu'))
+        else:
+            user.like_count -= 1
+            user.save(update_fields=['like_count'])
+            calculate_active(user)
+            add_action('дизлайк', user, data[1])
+            send_questionnaires(chat_id=chat_id, user=user)
     elif data[0] == 'sleep':
         profile_menu(chat_id=chat_id, user=user)
     elif data[0] == 'send_message_or_video':
-        calculate_active(user)
-        add_action('лайк', user, data[1])
-        msg = bot.send_message(chat_id=chat_id,
-                               text='Отправь сообщение. Это может быть текст, фотография, видео, кружочек или голосовое')
-        bot.register_next_step_handler(msg, send_message_or_video, chat_id, user, data[1])
+        if user.like_count == 0:
+            bot.send_message(chat_id=chat_id,
+                             text='К сожаленю ваш лайки закончились. Возвращайтесь через некоторое время',
+                             reply_markup=buttons.go_back('menu'))
+        else:
+            user.like_count -= 1
+            user.save(update_fields=['like_count'])
+            calculate_active(user)
+            add_action('лайк', user, data[1])
+            msg = bot.send_message(chat_id=chat_id,
+                                   text='Отправь сообщение. Это может быть текст, фотография, видео, кружочек или голосовое')
+            bot.register_next_step_handler(msg, send_message_or_video, chat_id, user, data[1])
     elif data[0] == 'answer_like':
         add_action('лайк', user, data[1])
         answer_like(chat_id=chat_id, user_id=data[1])

@@ -5,6 +5,7 @@ import time
 import urllib.parse
 from io import BytesIO
 
+from dateutil import parser
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import authenticate, login
@@ -12,6 +13,7 @@ from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.db.models import Q, Count, Avg
 from django.http import HttpResponse
 from django.shortcuts import render, HttpResponseRedirect, redirect
+from django.urls import reverse
 from django.utils import timezone
 from django.views import View
 from telebot import types
@@ -41,11 +43,17 @@ def user_view(request):
         category = request.GET.get('category')
         description = request.GET.get('description')
         is_fake = request.GET.get('is_fake')
+        no_photo = request.POST.get('no_photo')
 
         if is_fake == 'on':
             filter &= Q(is_fake=True)
         else:
             filter &= Q(is_fake=False)
+
+        if no_photo == 'on':
+            filter &= Q(avatars__isnull=True)
+        else:
+            filter &= Q(avatars__isnull=False)
 
         # Обработка возраста
         try:
@@ -106,6 +114,9 @@ def user_view(request):
 
 
 def delete_profile(request, pk):
+    next_url = request.META.get('HTTP_REFERER')
+    if not next_url:
+        next_url = reverse('profiles')
     if not request.user.is_authenticated:
         return HttpResponseRedirect('/')
     elif not request.user.groups.filter(name='удаление профиля'):
@@ -119,10 +130,13 @@ def delete_profile(request, pk):
         user.delete()
     except Exception:
         pass
-    return HttpResponseRedirect('/profiles')
+    return HttpResponseRedirect(next_url)
 
 
 def ban_profile(request, pk):
+    next_url = request.META.get('HTTP_REFERER')
+    if not next_url:
+        next_url = reverse('profiles')
     if not request.user.is_authenticated:
         return HttpResponseRedirect('/')
     elif not request.user.groups.filter(name='бан профиля'):
@@ -139,7 +153,7 @@ def ban_profile(request, pk):
         user.save(update_fields=['is_ban', 'active', 'is_checked'])
     except Exception as e:
         pass
-    return HttpResponseRedirect('/profiles')
+    return HttpResponseRedirect(next_url)
 
 
 class EditProfile(View):
@@ -197,6 +211,12 @@ class StateView(View):
             return HttpResponseRedirect('/profiles')
         date = request.GET.get('date')
         state = State.objects.filter(date=date)
+        if date:
+            date_object = parser.parse(date).date()
+            date_object -= datetime.timedelta(days=1)
+        else:
+            date_object = timezone.now() - datetime.timedelta(days=1)
+        last_state = State.objects.filter(date=date_object)
         if date and state:
             state = state.first()
             users_count = state.users_count
@@ -221,12 +241,16 @@ class StateView(View):
             male_count = all_users.filter(gender='мужской').count()
             active_female_count = all_users.filter(active=True).filter(gender='женский').count()
             active_male_count = all_users.filter(active=True).filter(gender='мужской').count()
-            average_active_time = User.objects.aggregate(Avg('active_time'))['active_time__avg']
-            average_active_score = User.objects.aggregate(Avg('active_score'))['active_score__avg']
+            average_active_time = round(User.objects.aggregate(Avg('active_time'))['active_time__avg'], 2)
+            average_active_score = round(User.objects.aggregate(Avg('active_score'))['active_score__avg'], 2)
             bot_active, _ = BotActive.objects.get_or_create(
                 date=timezone.now().today())
             day_online = bot_active.users.count()
             active_now = sum(1 for user in all_users if time.time() - user.last_active.timestamp() < 150)
+        if last_state:
+            pluss_users = users_count - last_state.first().users_count
+        else:
+            pluss_users = users_count
         return render(request, 'stat.html', context={
             'users_count': users_count,
             'ban_users_count': ban_users_count,
@@ -239,7 +263,8 @@ class StateView(View):
             'average_active_time': average_active_time,
             'average_active_score': average_active_score,
             'active_now': active_now,
-            'day_online': day_online
+            'day_online': day_online,
+            'pluss_users': pluss_users
         })
 
     def post(self, request):
